@@ -1,4 +1,5 @@
 import Development.AutomorphicArithmetic.CharacterBoxes.HalfPlane
+import Formalism.GammaFactorNonvanishing.RhOfRight
 
 open Complex
 
@@ -73,31 +74,11 @@ theorem strip (h : HalfPlane) : Strip := by
   · exact absurd hz (h N χ s hgt (Or.inr hs))
 
 theorem zeta (h : HalfPlane) : Zeta := by
-  intro s hz htriv hs1
-  have hs0 : s ≠ 0 := fun e => by rw [e, riemannZeta_zero] at hz; norm_num at hz
-  rcases lt_or_ge 0 s.re with hpos | hnpos
-  · rcases lt_or_ge s.re 1 with hlt1 | hge1
-    · have hL : DirichletCharacter.LFunction (1 : DirichletCharacter ℂ 1) s = 0 := by
-        rw [DirichletCharacter.LFunction_modOne_eq]; exact hz
-      exact strip h 1 1 s hpos hlt1 hL
-    · exact absurd hz (riemannZeta_ne_zero_of_one_le_re hge1)
-  · exfalso
-    have hG : Gammaℝ s ≠ 0 := by
-      intro hg
-      obtain ⟨n, hn⟩ := Complex.Gammaℝ_eq_zero_iff.mp hg
-      rcases n with _ | n
-      · exact hs0 (by simpa using hn)
-      · exact htriv ⟨n, by rw [hn]; push_cast; ring⟩
-    have hc : completedRiemannZeta s = 0 := by
-      rw [riemannZeta_def_of_ne_zero hs0, div_eq_zero_iff] at hz
-      exact hz.resolve_right hG
-    have h1s : 1 - s ≠ 0 := fun e => by
-      have := congrArg Complex.re e
-      rw [Complex.sub_re, Complex.one_re, Complex.zero_re] at this
-      linarith
-    have hz' : riemannZeta (1 - s) = 0 := by
-      rw [riemannZeta_def_of_ne_zero h1s, completedRiemannZeta_one_sub, hc, zero_div]
-    exact riemannZeta_ne_zero_of_one_le_re (by rw [Complex.sub_re, Complex.one_re]; linarith) hz'
+  apply Formalism.VW.rh_of_right
+  intro s hs hs1 hz
+  have hL : DirichletCharacter.LFunction (1 : DirichletCharacter ℂ 1) s = 0 := by
+    rwa [DirichletCharacter.LFunction_modOne_eq]
+  exact h 1 1 s hs (Or.inr hs1) hL
 
 theorem zeta_iff : Zeta ↔ RiemannHypothesis := Iff.rfl
 
