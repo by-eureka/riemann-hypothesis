@@ -1,13 +1,12 @@
 # riemann-hypothesis
 
-[![checks](https://github.com/leanprover-community/riemann-hypothesis/actions/workflows/checks.yml/badge.svg)](https://github.com/leanprover-community/riemann-hypothesis/actions/workflows/checks.yml)
+[![upstream checks](https://github.com/leanprover-community/riemann-hypothesis/actions/workflows/checks.yml/badge.svg)](https://github.com/leanprover-community/riemann-hypothesis/actions/workflows/checks.yml)
 
 A [Comparator](https://github.com/leanprover/comparator) setup and community build cache for the Lean formalization that
 claims a proof of the Riemann Hypothesis, and of GRH for Dirichlet L-functions, announced on
 2026-11-20 at <https://alpo.ge/remark.pdf>.
 
-The submitted Lean source is unmodified. This repository adds Comparator files and cache
-infrastructure:
+This fork maintains Eureka refactors of Levent Alpöge’s proof. The [reflection lemma](src/Formalism/GammaFactorNonvanishing/RhOfRight.lean) uses the functional equation for the completed zeta function. Eureka produced the edit with DeepSeek Flash and checked the theorem against its original statement. The [community repository](https://github.com/leanprover-community/riemann-hypothesis) maintains the verification and cache infrastructure listed below.
 
 | File | What it is |
 |---|---|
@@ -19,7 +18,16 @@ infrastructure:
 
 ## Using the build cache
 
-Fetch and restore Mathlib and this project's compiled modules:
+For a fresh clone of this fork, restore the cache at its upstream baseline, then rebuild the edited modules and their dependents.
+
+```bash
+git switch --detach aa01316131472849f8e3b5b3e49f04d0a06c983f
+lake exe cache get
+git switch -
+lake build Main
+```
+
+On a matching upstream checkout, use the community cache commands below.
 
 ```bash
 lake exe cache get
