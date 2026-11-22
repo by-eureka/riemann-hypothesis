@@ -30,13 +30,12 @@ theorem UpperTheory.Reformulated.B.Ra3.one_alg :
     rw [hpn]
     exact Nat.find_min' hex ⟨f, hf, hfx, rfl⟩
   have hpos : 0 < p.natDegree := by
-    by_contra h
-    have h0 : p.natDegree = 0 := by omega
-    rw [natDegree_eq_zero] at h0
-    obtain ⟨r, rfl⟩ := h0
-    rw [aeval_C] at hpx
-    have hr : r = 0 := hinj (by simpa using hpx)
-    exact hp0 (by simp [hr])
+    rcases Nat.eq_zero_or_pos p.natDegree with h | h
+    · exfalso
+      rw [eq_C_of_natDegree_eq_zero h, aeval_C] at hpx
+      refine hp0 ?_
+      rw [eq_C_of_natDegree_eq_zero h, show p.coeff 0 = 0 from hinj (by simpa using hpx), C_0]
+    · exact h
   refine ⟨p.leadingCoeff * b', mul_ne_zero (leadingCoeff_ne_zero.mpr hp0) hb', ?_⟩
   intro K _ _ y hy
   rw [map_mul] at hy
@@ -47,33 +46,24 @@ theorem UpperTheory.Reformulated.B.Ra3.one_alg :
     exact (natDegree_pos_iff_degree_pos.mp hpos).ne'
   obtain ⟨t, ht⟩ := IsAlgClosed.exists_root (p.map y) hdeg
   have htp : eval₂ y t p = 0 := by rwa [IsRoot.def, eval_map] at ht
-  have hker : ∀ n, ∀ f : R[X], f.natDegree ≤ n → aeval x f = 0 → eval₂ y t f = 0 := by
-    intro n
-    induction n with
-    | zero =>
-      intro f hf hfx
-      by_cases h0 : f = 0
-      · simp [h0]
-      · have := hmin f h0 hfx
-        omega
-    | succ n ih =>
-      intro f hf hfx
+  have hker : ∀ f : R[X], aeval x f = 0 → eval₂ y t f = 0 := by
+    intro f
+    induction hd : f.natDegree using Nat.strong_induction_on generalizing f with
+    | h n ih =>
+      intro hfx
       by_cases h0 : f = 0
       · simp [h0]
       have hle := hmin f h0 hfx
-      have hfpos : 0 < f.natDegree := by omega
-      have hlt := natDegree_cancelLeads_lt_of_natDegree_le_natDegree hle hfpos
+      have hfpos : 0 < f.natDegree := lt_of_lt_of_le hpos hle
       have hcx : aeval x (p.cancelLeads f) = 0 := by simp [cancelLeads, hpx, hfx]
-      have h1 := ih _ (by omega) hcx
-      simp only [cancelLeads, eval₂_sub, eval₂_mul, eval₂_C, eval₂_pow, eval₂_X, htp, mul_zero,
-        sub_zero, Nat.sub_eq_zero_of_le hle, pow_zero, mul_one] at h1
-      exact (mul_eq_zero.mp h1).resolve_left hya
+      have hlt := natDegree_cancelLeads_lt_of_natDegree_le_natDegree hle hfpos
+      have h1 := ih _ (by rw [← hd]; exact hlt) _ rfl hcx
+      simp [cancelLeads, htp, Nat.sub_eq_zero_of_le hle] at h1
+      exact h1.resolve_left hya
   let φ : R[X] →+* S := (aeval x : R[X] →ₐ[R] S).toRingHom
   let ψ : R[X] →+* K := eval₂RingHom y t
-  have hφ : Function.Surjective φ := hsurj
-  have hk : RingHom.ker φ ≤ RingHom.ker ψ := fun f hf =>
-    hker _ f le_rfl hf
-  let ξ : S →+* K := RingHom.liftOfSurjective φ hφ ⟨ψ, hk⟩
+  have hk : RingHom.ker φ ≤ RingHom.ker ψ := hker
+  let ξ : S →+* K := RingHom.liftOfSurjective φ hsurj ⟨ψ, hk⟩
   have hξ : ∀ f, ξ (φ f) = ψ f := fun f =>
     RingHom.liftOfRightInverse_comp_apply φ _ _ ⟨ψ, hk⟩ f
   have halgm : ∀ r : R, ξ (Algebra.algebraMap R S r) = y r := fun r => by
@@ -81,6 +71,4 @@ theorem UpperTheory.Reformulated.B.Ra3.one_alg :
     rw [← h2, hξ]
     simp [ψ]
   refine ⟨ξ, RingHom.ext halgm, fun h => hyb ?_⟩
-  rw [← halgm b']
-  have h3 : Algebra.algebraMap R S b' = c * w := hw
-  rw [h3, map_mul, h, zero_mul]
+  rw [← halgm b', hw, map_mul, h, zero_mul]

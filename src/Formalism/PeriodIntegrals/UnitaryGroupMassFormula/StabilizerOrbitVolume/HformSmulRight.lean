@@ -1,4 +1,4 @@
-import Mathlib
+import Formalism.PeriodIntegrals.UnitaryGroupMassFormula.WeilStabilizerVolume.HformSmulLeft
 import Formalism.PeriodIntegrals.OrbitalBoundsConclusion.WittExtensionTheorem
 import Formalism.SatakeDualWeyl.AdelicIwasawaHecke.Bridge
 import Formalism.PeriodIntegrals.UnitaryGroupMassFormula.StabilizerOrbitVolume.FibInfEx
@@ -96,59 +96,7 @@ theorem witt_tuple (J : Matrix (Fin M) (Fin M) E) (hJ : ∀ i j, starRingEnd E (
     (hG : ∀ i j, Formalism.UG.hform (starRingEnd E) J (X i) (X j) =
       Formalism.UG.hform (starRingEnd E) J (X0 i) (X0 j)) :
     ∃ g ∈ Formalism.UG.UJ (starRingEnd E) J, ∀ i, (g : Matrix (Fin M) (Fin M) E) *ᵥ X0 i = X i := by
-  let U := Submodule.span E (Set.range X0)
-  let bU : Module.Basis (Fin a) E U := Module.Basis.span h0
-  have hb : ∀ i, ((bU i : U) : Fin M → E) = X0 i := fun i => by
-    show ((Module.Basis.span h0 i : U) : Fin M → E) = X0 i
-    rw [Module.Basis.span_apply]
-  let f : U →ₗ[E] (Fin M → E) := bU.constr E X
-  have hf : ∀ i, f (bU i) = X i := fun i => bU.constr_basis E X i
-  have hinj : Function.Injective f := by
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-    intro u hu
-    have hs := bU.sum_repr u
-    rw [← hs] at hu
-    simp only [map_sum, map_smul, hf] at hu
-    have hc := (Fintype.linearIndependent_iff.mp h1) _ hu
-    rw [← hs]
-    simp [hc]
-  have key : ((hSes J).comp f).compl₂ f = ((hSes J).comp U.subtype).compl₂ U.subtype := by
-    refine LinearMap.ext_basis bU bU fun i j => ?_
-    show hSes J (f (bU i)) (f (bU j)) = hSes J ((bU i : U) : Fin M → E) ((bU j : U) : Fin M → E)
-    rw [hf, hf, hb, hb]
-    exact hG i j
-  have hiso : ∀ x y : U, hSes J (f x) (f y) = hSes J x y := fun x y =>
-    DFunLike.congr_fun (DFunLike.congr_fun key x) y
-  obtain ⟨g, hgiso, hgf⟩ :=
-    witt_extension_theorem E (Fin M → E) (hSes J) (hSes_herm J hJ) (hSes_nondeg J hdet) U f hinj hiso
-  let m : Matrix (Fin M) (Fin M) E := LinearMap.toMatrix' (g : (Fin M → E) →ₗ[E] (Fin M → E))
-  let mi : Matrix (Fin M) (Fin M) E :=
-    LinearMap.toMatrix' (g.symm : (Fin M → E) →ₗ[E] (Fin M → E))
-  have hc1 : (g : (Fin M → E) →ₗ[E] (Fin M → E)).comp (g.symm : (Fin M → E) →ₗ[E] (Fin M → E)) =
-      LinearMap.id := LinearMap.ext fun x => by simp
-  have hc2 : (g.symm : (Fin M → E) →ₗ[E] (Fin M → E)).comp (g : (Fin M → E) →ₗ[E] (Fin M → E)) =
-      LinearMap.id := LinearMap.ext fun x => by simp
-  have hm1 : m * mi = 1 := by
-    simp only [m, mi]
-    rw [← LinearMap.toMatrix'_comp, hc1, LinearMap.toMatrix'_id]
-  have hm2 : mi * m = 1 := by
-    simp only [m, mi]
-    rw [← LinearMap.toMatrix'_comp, hc2, LinearMap.toMatrix'_id]
-  have hmv : ∀ v, m *ᵥ v = g v := fun v => by
-    simp only [m]
-    rw [LinearMap.toMatrix'_mulVec]
-    rfl
-  refine ⟨⟨m, mi, hm1, hm2⟩, ?_, ?_⟩
-  · show Formalism.UG.cT (starRingEnd E) m * J * m = J
-    ext i j
-    have h := hgiso (Pi.single i 1) (Pi.single j 1)
-    rw [hSes_apply, hSes_apply, ← hmv, ← hmv, Formalism.UG.P.hform_mulVec, Formalism.UG.P.hform_single,
-      Formalism.UG.P.hform_single] at h
-    exact h
-  · intro i
-    show m *ᵥ X0 i = X i
-    rw [hmv, ← hb i]
-    exact (hgf (bU i)).trans (hf i)
+  exact PI.VolStabW.witt_tuple J hJ hdet X0 X h0 h1 hG
 
 end General
 

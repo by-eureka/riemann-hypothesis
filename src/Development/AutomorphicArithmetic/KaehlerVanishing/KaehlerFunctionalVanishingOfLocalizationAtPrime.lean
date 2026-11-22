@@ -10,27 +10,22 @@ theorem UpperTheory.kaehler_functional_vanishing_of_localization_at_prime :
       ∃ L : Ω[B⁄ℂ] →ₗ[ℂ] ℂ, (∀ b : B, L (KaehlerDifferential.D ℂ B b) = η (algebraMap B S b)) ∧
         ∀ (b : B) (ω : Ω[B⁄ℂ]), L (b • ω) = ev (algebraMap B S b) * L ω := by
     intro η hη
-    have h1 : η 1 = 0 := by
-      have := hη 1 1
-      simp only [mul_one, map_one, one_mul] at this
-      linear_combination -this
     letI : Module B ℂ := Module.compHom ℂ ((ev.toRingHom).comp (algebraMap B S))
     haveI : IsScalarTower ℂ B ℂ := ⟨fun c b z => by
       change ev (algebraMap B S (c • b)) * z = c * (ev (algebraMap B S b) * z)
       rw [Algebra.smul_def c b, map_mul, map_mul, ← IsScalarTower.algebraMap_apply, AlgHom.commutes]
       simp [mul_assoc]⟩
-    let D' : Derivation ℂ B ℂ :=
+    let D' : Derivation ℂ B ℂ := Derivation.mk'
       { toFun := fun b => η (algebraMap B S b)
         map_add' := fun a b => by simp only [map_add]
         map_smul' := fun c b => by
           simp only [RingHom.id_apply]
           rw [Algebra.smul_def c b, map_mul, ← IsScalarTower.algebraMap_apply, ← Algebra.smul_def,
-            map_smul]
-        map_one_eq_zero' := by simp only [LinearMap.coe_mk, AddHom.coe_mk, map_one, h1]
-        leibniz' := fun a b => by
-          change η (algebraMap B S (a * b)) = ev (algebraMap B S a) * η (algebraMap B S b) +
-            ev (algebraMap B S b) * η (algebraMap B S a)
-          rw [map_mul, hη] }
+            map_smul] }
+      (fun a b => by
+        change η (algebraMap B S (a * b)) = ev (algebraMap B S a) * η (algebraMap B S b) +
+          ev (algebraMap B S b) * η (algebraMap B S a)
+        rw [map_mul, hη])
     refine ⟨D'.liftKaehlerDifferential.restrictScalars ℂ, fun b => ?_, fun b ω => ?_⟩
     · simp only [LinearMap.coe_restrictScalars, Derivation.liftKaehlerDifferential_comp_D]
       rfl

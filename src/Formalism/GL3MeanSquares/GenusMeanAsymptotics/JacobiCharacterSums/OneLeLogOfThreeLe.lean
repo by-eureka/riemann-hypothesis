@@ -1,4 +1,5 @@
 import Formalism.GL3MeanSquares.GenusMeanAsymptotics.JacobiCharacterSums.PNTDensSt
+import Formalism.GL3MeanSquares.GenusMeanAsymptotics.JacobiCharacterSums.DyadicSizeLePowTwelveSecond
 
 open Finset
 
@@ -93,19 +94,7 @@ theorem first_small_condition (u l K J q s Lq c : ℝ) (hq : 0 < q) (hs : 0 < s)
 
 theorem rpow_neg_exponent_bound (q U : ℕ) (σ : ℝ) (hq : 1 ≤ q) (hσ : 3 / 4 ≤ σ) (hU : q ^ 3 ≤ U) :
     (U : ℝ) ^ (1 - 2 * σ) ≤ 1 / ((q : ℝ) * Real.sqrt q) := by
-  have hq' : (1 : ℝ) ≤ q := by exact_mod_cast hq
-  have hq3 : (1 : ℝ) ≤ (q : ℝ) ^ 3 := one_le_pow₀ hq'
-  have hU' : (q : ℝ) ^ 3 ≤ U := by exact_mod_cast hU
-  have h1 : (U : ℝ) ^ (1 - 2 * σ) ≤ (U : ℝ) ^ (-(1 / 2) : ℝ) :=
-    Real.rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
-  have h2 : (U : ℝ) ^ (-(1 / 2) : ℝ) ≤ ((q : ℝ) ^ 3) ^ (-(1 / 2) : ℝ) :=
-    Real.rpow_le_rpow_of_nonpos (by positivity) hU' (by norm_num)
-  have h3 : ((q : ℝ) ^ 3) ^ (-(1 / 2) : ℝ) = 1 / ((q : ℝ) * Real.sqrt q) := by
-    rw [Real.rpow_neg (by positivity), ← Real.sqrt_eq_rpow, one_div]
-    congr 1
-    rw [show (q : ℝ) ^ 3 = (q : ℝ) ^ 2 * q by ring, Real.sqrt_mul (by positivity),
-      Real.sqrt_sq (by positivity)]
-  linarith
+  exact rpow_neg_exponent_bound_second q U σ hq hσ hU
 
 theorem rpow_pos_exponent_bound (q U : ℕ) (x σ : ℝ) (hx : 0 < x) (hqx : (q : ℝ) ≤ 2 * x) (hσ : 3 / 4 ≤ σ)
     (hσ1 : σ ≤ 1) (hU : U ≤ q ^ 12) : (U : ℝ) ^ (2 - 2 * σ) ≤ 64 * x ^ (24 * (1 - σ)) := by

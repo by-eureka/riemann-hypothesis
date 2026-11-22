@@ -9,7 +9,7 @@ theorem mvPowerSeries_three_eq_zero_of_subst_lines :
       Φ = 0 := by
   intro K _ _ Φ h
   ext d
-  set n := ∑ i, d i with hn
+  set n := ∑ i, d i
   let S : Finset (Fin 3 →₀ ℕ) :=
     (Finset.Iic (Finsupp.equivFunOnFinite.symm fun _ => n)).filter (fun e => ∑ i, e i = n)
   have hS : ∀ e, e ∈ S ↔ ∑ i, e i = n := by
@@ -43,16 +43,14 @@ theorem mvPowerSeries_three_eq_zero_of_subst_lines :
     rw [finsum_eq_sum_of_support_subset _ (s := S) ?_]
     · simp only [P, map_sum, MvPolynomial.eval_monomial]
       refine Finset.sum_congr rfl (fun e he => ?_)
-      rw [if_pos ((hS e).1 he).symm, Finsupp.prod_fintype _ _ (fun s => pow_zero _)]
+      simp [((hS e).1 he).symm]
     · intro e he
       rw [Function.mem_support] at he
       rw [Finset.mem_coe, hS]
       by_contra hne
-      exact he (by rw [if_neg (Ne.symm hne), mul_zero])
-  have hP : P = 0 := MvPolynomial.funext (fun t => by rw [← hcoef, h t, map_zero, map_zero])
-  have hd := congrArg (MvPolynomial.coeff d) hP
-  simp only [P, MvPolynomial.coeff_zero, MvPolynomial.coeff_sum, MvPolynomial.coeff_monomial,
-    Finset.sum_ite_eq', Finset.sum_ite_eq, if_pos ((hS d).2 rfl)] at hd
-  simpa using hd
+      exact he (by simp [Ne.symm hne])
+  have hP : P = 0 := MvPolynomial.funext (fun t => by simp [← hcoef, h t])
+  have hd := congrArg (fun p : MvPolynomial (Fin 3) K => p.coeff d) hP
+  simpa [P, MvPolynomial.coeff_sum, MvPolynomial.coeff_monomial, (hS d).2 rfl] using hd
 
 end GlobalTheory

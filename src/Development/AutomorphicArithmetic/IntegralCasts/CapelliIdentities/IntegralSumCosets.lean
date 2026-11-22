@@ -17,53 +17,37 @@ theorem UpperTheory.Reformulated.B.IntegralSumCosets.integral_eq_measure_mul_sum
     (hKo.preimage (continuous_id.mul continuous_const)).measurableSet
   have hμ : ∀ a : ι, μ ((fun g : G => g * (R a)⁻¹) ⁻¹' (K : Set G)) = μ (K : Set G) := fun a =>
     MeasureTheory.measure_preimage_mul_right μ _ _
-  have hval : ∀ (a : ι) (g : G), g * (R a)⁻¹ ∈ K → f g = f (R a) := by
-    intro a g hg
-    have h := hf _ hg (R a)
-    rwa [inv_mul_cancel_right] at h
+  have hval : ∀ (a : ι) (g : G), g * (R a)⁻¹ ∈ K → f g = f (R a) := fun a g hg =>
+    by simpa using hf _ hg (R a)
+  have hdisj : ∀ (a b : ι) (g : G), g * (R a)⁻¹ ∈ K → g * (R b)⁻¹ ∈ K → a = b := by
+    intro a b g ha hb
+    exact (hR b a (by simpa [mul_assoc] using K.mul_mem (K.inv_mem hb) ha)).symm
   have hdec : f = fun g => ∑ a ∈ S,
       ((fun g : G => g * (R a)⁻¹) ⁻¹' (K : Set G)).indicator (fun _ => f (R a)) g := by
     funext g
     by_cases hex : ∃ a ∈ S, g * (R a)⁻¹ ∈ K
     · obtain ⟨a, haS, ha⟩ := hex
-      rw [Finset.sum_eq_single a]
-      · rw [Set.indicator_of_mem (by exact ha)]
-        exact hval a g ha
+      rw [Finset.sum_eq_single_of_mem a haS]
+      · rw [Set.indicator_of_mem (by exact ha), hval a g ha]
       · intro b _ hba
         apply Set.indicator_of_notMem
-        intro hb
-        apply hba
-        apply hR
-        have hb' : g * (R b)⁻¹ ∈ K := hb
-        have h := K.mul_mem (K.inv_mem hb') ha
-        have e : (g * (R b)⁻¹)⁻¹ * (g * (R a)⁻¹) = R b * (R a)⁻¹ := by group
-        rwa [e] at h
-      · intro h
-        exact absurd haS h
-    · have h0 : f g = 0 := by
-        by_contra h
-        exact hex (hsupp g h)
+        exact fun h => hba (hdisj a b g ha h).symm
+    · have h0 : f g = 0 := of_not_not (mt (hsupp g) hex)
       rw [h0]
-      symm
-      apply Finset.sum_eq_zero
-      intro a haS
+      refine (Finset.sum_eq_zero fun a haS => ?_).symm
       apply Set.indicator_of_notMem
-      intro ha
-      exact hex ⟨a, haS, ha⟩
+      exact fun h => hex ⟨a, haS, h⟩
   have hint : ∀ a ∈ S, MeasureTheory.Integrable
-      (((fun g : G => g * (R a)⁻¹) ⁻¹' (K : Set G)).indicator (fun _ => f (R a))) μ := by
-    intro a _
-    rw [MeasureTheory.integrable_indicator_iff (hmeas a)]
-    exact MeasureTheory.integrableOn_const (by rw [hμ a]; exact hKc.measure_lt_top.ne)
+      (((fun g : G => g * (R a)⁻¹) ⁻¹' (K : Set G)).indicator (fun _ => f (R a))) μ := fun a _ =>
+    (MeasureTheory.integrable_indicator_iff (hmeas a)).mpr
+      (MeasureTheory.integrableOn_const (by rw [hμ a]; exact hKc.measure_lt_top.ne))
   calc ∫ g, f g ∂μ
       = ∫ g, ∑ a ∈ S,
           ((fun g : G => g * (R a)⁻¹) ⁻¹' (K : Set G)).indicator (fun _ => f (R a)) g ∂μ :=
-        congrArg (fun F : G → ℂ => ∫ g, F g ∂μ) hdec
+        congrArg (fun F => ∫ g, F g ∂μ) hdec
     _ = ∑ a ∈ S, ∫ g,
           ((fun g : G => g * (R a)⁻¹) ⁻¹' (K : Set G)).indicator (fun _ => f (R a)) g ∂μ :=
-        MeasureTheory.integral_finset_sum S hint
+        MeasureTheory.integral_finsetSum S hint
     _ = (↑(μ.real (↑K : Set G)) : ℂ) * ∑ a ∈ S, f (R a) := by
-        rw [Finset.mul_sum]
-        refine Finset.sum_congr rfl fun a _ => ?_
-        rw [MeasureTheory.integral_indicator_const _ (hmeas a), MeasureTheory.measureReal_def,
-          hμ a, MeasureTheory.measureReal_def, Complex.real_smul]
+        simp [Finset.mul_sum, MeasureTheory.integral_indicator_const, hmeas, hμ,
+          MeasureTheory.measureReal_def, Complex.real_smul]

@@ -20,8 +20,7 @@ theorem UpperTheory.filtration_exponent_bound :
     exact ⟨⟨x', h1⟩, h2⟩
   choose f hf using hγ'
   have h0 : γ w - w = ϖ • (f 0 ⟨w, hw⟩ : D) := by
-    have := hf 0 ⟨w, hw⟩
-    simpa [hlam0] using this
+    simpa [hlam0] using hf 0 ⟨w, hw⟩
   let s : ℕ → N := fun K => Nat.rec (l ^ E 0 • f 0 ⟨w, hw⟩)
     (fun k sk => - f (k + 1) (((u k)⁻¹ : Oˣ).val • sk)) K
   have hs0 : s 0 = l ^ E 0 • f 0 ⟨w, hw⟩ := rfl
@@ -48,16 +47,12 @@ theorem UpperTheory.filtration_exponent_bound :
         refine Finset.sum_congr rfl fun y hy => ?_
         have hy' : E y ≤ E K := hE (Nat.lt_succ_iff.mp (Finset.mem_range.mp hy))
         rw [smul_smul, ← pow_add]
-        congr 2
-        omega
+        rw [Nat.sub_add_sub_cancel hK hy']
       have hp : l ^ E (K + 1) = l ^ (E (K + 1) - E K) * l ^ E K := by
-        rw [← pow_add]
-        congr 1
-        omega
+        exact (pow_sub_mul_pow l hK).symm
       have hl : lam (K + 1) • (ϖ ^ (K + 1) • (c (K + 1) : D)) =
           l ^ (E (K + 1) - E K) • (ϖ ^ (K + 1) • (s K : D)) := by
         rw [hcS, Submodule.coe_smul, smul_comm (ϖ ^ (K + 1)), smul_smul, hu]
-        congr 1
         rw [mul_right_comm, Units.mul_inv, one_mul]
       rw [Finset.sum_range_succ _ (K + 1), hsum, hp, mul_smul, ← sub_sub, ← smul_sub, ih, hf, hl,
         hsS, ← hcS]
@@ -71,9 +66,7 @@ theorem UpperTheory.filtration_exponent_bound :
     have hK : E K ≤ e (K + 1) := (hEe K).trans (he (Nat.le_succ K))
     refine ⟨l ^ (e (K + 1) - E K) • (s K : D), N.smul_mem _ (s K).2, ?_⟩
     have hp : l ^ e (K + 1) = l ^ (e (K + 1) - E K) * l ^ E K := by
-      rw [← pow_add]
-      congr 1
-      omega
+      exact (pow_sub_mul_pow l hK).symm
     rw [smul_comm (ϖ ^ (K + 1)), ← key, smul_sub (l ^ (e (K + 1) - E K)), ← mul_smul, ← hp,
       Finset.smul_sum]
     congr 1
@@ -81,7 +74,5 @@ theorem UpperTheory.filtration_exponent_bound :
     have hyK : y ≤ K := Nat.lt_succ_iff.mp (Finset.mem_range.mp hy)
     have h1 : E y ≤ E K := hE hyK
     have h2 : e y ≤ e (K + 1) := he (hyK.trans (Nat.le_succ K))
-    have h3 := hEe y
     rw [smul_comm (ϖ ^ y), map_smul, ← smul_sub, smul_smul, smul_smul, ← pow_add, ← pow_add]
-    congr 2
-    omega
+    rw [Nat.sub_add_sub_cancel h2 (hEe y), Nat.sub_add_sub_cancel hK h1]

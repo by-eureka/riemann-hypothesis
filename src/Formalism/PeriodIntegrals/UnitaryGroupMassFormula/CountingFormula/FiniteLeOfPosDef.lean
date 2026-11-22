@@ -7,10 +7,8 @@ theorem finite_le_of_posDef {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteD
     (A : Submodule ℤ V) (hA : A.FG) (c : ℚ) : {v | v ∈ A ∧ B v v ≤ c}.Finite := by
   classical
   obtain ⟨S, hS'⟩ := hA
-  have hnn : ∀ v, 0 ≤ B v v := fun v => by
-    by_cases hv : v = 0
-    · simp [hv]
-    · exact (hpos v hv).le
+  have hnn : ∀ v, 0 ≤ B v v := fun v =>
+    if hv : v = 0 then by simp [hv] else (hpos v hv).le
 
   have cs : ∀ v w, B v w ^ 2 ≤ B v v * B w w := by
     intro v w
@@ -20,15 +18,13 @@ theorem finite_le_of_posDef {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteD
       have key := hnn (B w w • v - B v w • w)
       simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul,
         hS w v] at key
-      have h2 : B w w * B v w ^ 2 ≤ B w w * (B v v * B w w) := by nlinarith [key]
-      exact le_of_mul_le_mul_left h2 hww
+      nlinarith [hww, key]
   let b := Module.finBasis ℚ V
   have hinj : ∀ v w, (∀ i, B v (b i) = B w (b i)) → v = w := by
     intro v w h
-    have h0 : B (v - w) = 0 := b.ext fun i => by simp [map_sub, h i]
     by_contra hne
     have h1 := hpos (v - w) (sub_ne_zero.2 hne)
-    rw [h0] at h1
+    rw [show B (v - w) = 0 from b.ext fun i => by simp [map_sub, h i]] at h1
     simp at h1
   let N : ℕ := ∏ s ∈ S, ∏ i, (B s (b i)).den
   have hNpos : 0 < N :=
@@ -72,37 +68,24 @@ theorem finite_le_of_posDef {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteD
     have h1 := cs v (b i)
     have h2 : B v v * B (b i) (b i) ≤ |c| * B (b i) (b i) :=
       mul_le_mul_of_nonneg_right (hv.trans (le_abs_self c)) (hnn _)
-    have h3 : |B v (b i)| ≤ 1 + B v (b i) ^ 2 := by
-      nlinarith [sq_nonneg (|B v (b i)| - 1), sq_abs (B v (b i))]
-    linarith
+    nlinarith [h1, h2, sq_abs (B v (b i)), sq_nonneg (|B v (b i)| - 1)]
   let g : V → Fin (Module.finrank ℚ V) → ℤ := fun v i => round ((N : ℚ) * B v (b i))
   have hg : ∀ v ∈ A, ∀ i, ((g v i : ℤ) : ℚ) = N * B v (b i) := by
     intro v hv i
     obtain ⟨z, hz⟩ := hint v hv i
     simp only [g]
     rw [← hz, round_intCast]
+  let K : Fin (Module.finrank ℚ V) → ℤ := fun i => ⌈(N : ℚ) * (1 + |c| * B (b i) (b i))⌉
   apply Set.Finite.of_finite_image (f := g)
-  · refine Set.Finite.subset (Set.Finite.pi (t := fun i =>
-      Set.Icc (-⌈(N : ℚ) * (1 + |c| * B (b i) (b i))⌉) ⌈(N : ℚ) * (1 + |c| * B (b i) (b i))⌉)
+  · refine Set.Finite.subset (Set.Finite.pi (t := fun i => Set.Icc (-(K i)) (K i))
       fun i => Set.finite_Icc _ _) ?_
     rintro _ ⟨v, ⟨hvA, hvc⟩, rfl⟩
     simp only [Set.mem_pi, Set.mem_univ, true_implies, Set.mem_Icc]
     intro i
-    have e := hg v hvA i
-    have hb : |((g v i : ℤ) : ℚ)| ≤ N * (1 + |c| * B (b i) (b i)) := by
-      rw [e, abs_mul, Nat.abs_cast]
-      exact mul_le_mul_of_nonneg_left (hbd v hvc i) (Nat.cast_nonneg _)
-    have hK := Int.le_ceil ((N : ℚ) * (1 + |c| * B (b i) (b i)))
-    have l1 := neg_abs_le ((g v i : ℤ) : ℚ)
-    have l2 := le_abs_self ((g v i : ℤ) : ℚ)
-    constructor
-    · have : ((-⌈(N : ℚ) * (1 + |c| * B (b i) (b i))⌉ : ℤ) : ℚ) ≤ ((g v i : ℤ) : ℚ) := by
-        push_cast
-        linarith
-      exact_mod_cast this
-    · have : ((g v i : ℤ) : ℚ) ≤ ((⌈(N : ℚ) * (1 + |c| * B (b i) (b i))⌉ : ℤ) : ℚ) := by
-        linarith
-      exact_mod_cast this
+    have hK : |((g v i : ℤ) : ℚ)| ≤ (K i : ℚ) := by
+      rw [hg v hvA i, abs_mul, Nat.abs_cast]
+      exact (mul_le_mul_of_nonneg_left (hbd v hvc i) (Nat.cast_nonneg _)).trans (Int.le_ceil _)
+    exact_mod_cast abs_le.mp hK
   · rintro v ⟨hvA, -⟩ w ⟨hwA, -⟩ hvw
     apply hinj
     intro i

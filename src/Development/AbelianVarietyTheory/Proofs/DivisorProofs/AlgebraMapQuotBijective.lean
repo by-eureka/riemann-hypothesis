@@ -1,4 +1,4 @@
-import Mathlib
+import Development.AbelianVarietyTheory.Proofs.FoundationProofs.DedekindFiniteTypeIdealCodimension
 open Polynomial
 
 namespace GlobalTheory
@@ -51,53 +51,7 @@ theorem span_sup_mul_eq (I P : Ideal A) (hI : I ≠ ⊥) (hP : P.IsMaximal) (x :
 
 theorem rank_quot_mul_maximal (I P : Ideal A) (hI : I ≠ ⊥) (hP : P.IsMaximal) :
     Module.rank k (A ⧸ (I * P)) = Module.rank k (A ⧸ I) + 1 := by
-  haveI := hP
-  have hne : I * P ≠ I := by
-    intro h
-    have h2 : I * P = I * ⊤ := by rw [h, Ideal.mul_top]
-    exact hP.ne_top (mul_left_cancel₀ (show I ≠ 0 from hI) h2)
-  obtain ⟨x, hx, hxP⟩ : ∃ x ∈ I, x ∉ I * P := by
-    by_contra h
-    push_neg at h
-    exact hne (le_antisymm Ideal.mul_le_left h)
-  let f : (A ⧸ (I * P)) →ₗ[k] (A ⧸ I) :=
-    (Ideal.Quotient.factorₐ k (Ideal.mul_le_left : I * P ≤ I)).toLinearMap
-  have hf : Function.Surjective f := by
-    intro y
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective y
-    exact ⟨Ideal.Quotient.mk _ a, rfl⟩
-  set v : A ⧸ (I * P) := Ideal.Quotient.mk _ x with hvdef
-  have hv0 : v ≠ 0 := fun h => hxP (Ideal.Quotient.eq_zero_iff_mem.1 h)
-  have hker : LinearMap.ker f = k ∙ v := by
-    apply le_antisymm
-    · intro z hz
-      obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective z
-      have hy : y ∈ I := by
-        have h0 : f (Ideal.Quotient.mk _ y) = 0 := hz
-        exact Ideal.Quotient.eq_zero_iff_mem.1 h0
-      have hyK : y ∈ Ideal.span {x} ⊔ I * P := by
-        rw [span_sup_mul_eq I P hI hP x hx hxP]; exact hy
-      obtain ⟨a', ha', z', hz', hsum⟩ := Submodule.mem_sup.1 hyK
-      obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.1 ha'
-      obtain ⟨c, hc⟩ := exists_sub_mem (k := k) P a
-      rw [Submodule.mem_span_singleton]
-      refine ⟨c, ?_⟩
-      rw [← hsum, hvdef, Algebra.smul_def, ← Ideal.Quotient.mk_algebraMap, ← map_mul,
-        Ideal.Quotient.eq]
-      have h3 : algebraMap k A c * x - (a * x + z') = -((a - algebraMap k A c) * x) - z' := by
-        ring
-      rw [h3]
-      refine Ideal.sub_mem _ ((I * P).neg_mem ?_) hz'
-      rw [mul_comm I P]
-      exact Ideal.mul_mem_mul hc hx
-    · rw [Submodule.span_le, Set.singleton_subset_iff]
-      show f v = 0
-      exact Ideal.Quotient.eq_zero_iff_mem.2 hx
-  have h1 := LinearMap.rank_range_add_rank_ker f
-  rw [LinearMap.range_eq_top.2 hf, rank_top, hker] at h1
-  have hv1 : Module.rank k (k ∙ v) = 1 := by
-    rw [← Module.finrank_eq_rank, finrank_span_singleton hv0]; simp
-  rw [← h1, hv1]
+  exact GlobalTheory.DedekindCodim.rank_quot_mul_maximal I P hI hP
 
 end DedekindCodimG
 end GlobalTheory

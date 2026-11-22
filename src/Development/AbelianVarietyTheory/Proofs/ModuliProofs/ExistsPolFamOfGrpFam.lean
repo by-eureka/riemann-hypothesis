@@ -6,6 +6,7 @@ import ReciprocityTheory.ReductiveGroups.ArithmeticGeometry.BirationalGeometry.T
 import ReciprocityTheory.ReductiveGroups.ArithmeticGeometry.BirationalGeometry.ToroidalCompactification.HeckeKer
 import ReciprocityTheory.ReductiveGroups.ArithmeticGeometry.BirationalGeometry.ToroidalCompactification.IsHolPeriods
 import ReciprocityTheory.ReductiveGroups.ArithmeticGeometry.ExtensionDescent.UnifUniqSt
+import Development.AbelianVarietyTheory.Proofs.ModuliProofs.GrpFamOfDenseFibres
 open AlgebraicGeometry CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory MonObj NumberField
 open ReciprocityTheory.ChartRestriction.G ReciprocityTheory.ChartRestriction.G.Semi ReciprocityTheory.ChartRestriction.G.Geo.Tor
 open scoped CategoryTheory.Obj TensorProduct
@@ -18,35 +19,7 @@ theorem torsBasis_pow {G : Type} [CommGroup G] {r k l : ℕ} (hk : k ≠ 0) (hl 
     (hy : ∀ i, y i ^ (k * l) = 1)
     (h : ∀ z : G, z ^ (k * l) = 1 → ∃! c : Fin r → ZMod (k * l), ∏ i, y i ^ (c i).val = z)
     (z : G) (hz : z ^ k = 1) : ∃! c : Fin r → ZMod k, ∏ i, (y i ^ l) ^ (c i).val = z := by
-  haveI : NeZero k := ⟨hk⟩
-  have red : ∀ e : Fin r → ℕ, ∏ i, y i ^ ((e i : ZMod (k * l))).val = ∏ i, y i ^ e i := fun e =>
-    Finset.prod_congr rfl fun i _ => by rw [ZMod.val_natCast, ← pow_eq_pow_mod _ (hy i)]
-  have tor : ∀ e : Fin r → ℕ, (∏ i, y i ^ e i) ^ (k * l) = 1 := fun e => by
-    rw [← Finset.prod_pow]
-    exact Finset.prod_eq_one fun i _ => by rw [← pow_mul, mul_comm, pow_mul, hy, one_pow]
-  have inj : ∀ e e' : Fin r → ℕ, ∏ i, y i ^ e i = ∏ i, y i ^ e' i → ∀ i, e i ≡ e' i [MOD k * l] := by
-    intro e e' he i
-    have := (h _ (tor e)).unique (y₁ := fun i => (e i : ZMod (k * l))) (y₂ := fun i => (e' i : ZMod (k * l)))
-      (red e) ((red e').trans he.symm)
-    exact (ZMod.natCast_eq_natCast_iff _ _ _).1 (congrFun this i)
-  obtain ⟨c, hc, -⟩ := h z (by rw [pow_mul, hz, one_pow])
-  have hd : ∀ i, l ∣ (c i).val := fun i => by
-    have := inj (fun i => k * (c i).val) (fun _ => 0) (by
-      simp only [pow_zero, Finset.prod_const_one]
-      rw [← hz, ← hc, ← Finset.prod_pow]
-      exact Finset.prod_congr rfl fun i _ => by rw [← pow_mul, mul_comm]) i
-    exact Nat.dvd_of_mul_dvd_mul_left (Nat.pos_of_ne_zero hk) ((Nat.modEq_zero_iff_dvd).1 this)
-  choose d hd using hd
-  refine ⟨fun i => (d i : ZMod k), ?_, fun c' hc' => funext fun i => ?_⟩
-  · rw [← hc]
-    refine Finset.prod_congr rfl fun i _ => ?_
-    rw [ZMod.val_natCast, ← pow_eq_pow_mod _ (by rw [← pow_mul, mul_comm, hy]), hd, pow_mul]
-  · have := inj (fun i => l * (c' i).val) (fun i => l * d i) (by
-      simp only [pow_mul, ← hd]
-      rw [hc, ← hc']) i
-    rw [mul_comm k l] at this
-    have h2 := Nat.ModEq.mul_left_cancel' hl this
-    rw [← (ZMod.natCast_eq_natCast_iff _ _ _).2 h2, ZMod.natCast_zmod_val]
+  exact GlobalTheory.ZM.NearBuild.Fibre.basis_pow hk hl y hy h z hz
 
 variable {S : Scheme.{0}}
 

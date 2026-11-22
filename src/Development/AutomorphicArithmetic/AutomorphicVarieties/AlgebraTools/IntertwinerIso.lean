@@ -67,17 +67,13 @@ theorem UpperTheory.V.AlgebraTools.intertwiner_iso :
       funext i
       simp [A, Matrix.mulVec, dotProduct, ite_mul, h0]
     let e := LinearEquiv.ofBijective (Matrix.toLin' V) ⟨inj, surj⟩
-    have he1 : Matrix.toLin' V ∘ₗ (e.symm : (m → F) →ₗ[F] (n → F)) = LinearMap.id :=
-      LinearMap.ext fun y => e.apply_symm_apply y
-    have he2 : (e.symm : (m → F) →ₗ[F] (n → F)) ∘ₗ Matrix.toLin' V = LinearMap.id :=
-      LinearMap.ext fun y => e.symm_apply_apply y
     refine ⟨LinearMap.toMatrix' (e.symm : (m → F) →ₗ[F] (n → F)), ?_, ?_⟩
-    · have h := LinearMap.toMatrix'_comp (Matrix.toLin' V) (e.symm : (m → F) →ₗ[F] (n → F))
-      rw [he1, LinearMap.toMatrix'_id, LinearMap.toMatrix'_toLin'] at h
-      exact h.symm
-    · have h := LinearMap.toMatrix'_comp (e.symm : (m → F) →ₗ[F] (n → F)) (Matrix.toLin' V)
-      rw [he2, LinearMap.toMatrix'_id, LinearMap.toMatrix'_toLin'] at h
-      exact h.symm
+    · apply Matrix.toLin'.injective
+      rw [Matrix.toLin'_mul, Matrix.toLin'_toMatrix', Matrix.toLin'_one]
+      exact LinearMap.ext e.apply_symm_apply
+    · apply Matrix.toLin'.injective
+      rw [Matrix.toLin'_mul, Matrix.toLin'_toMatrix', Matrix.toLin'_one]
+      exact LinearMap.ext e.symm_apply_apply
   · have hC : ∀ A : Matrix m m F, Commute A V := by
       intro A
       have hA : A ∈ Submodule.span F (Set.range ρ) := by rw [hρ]; exact Submodule.mem_top

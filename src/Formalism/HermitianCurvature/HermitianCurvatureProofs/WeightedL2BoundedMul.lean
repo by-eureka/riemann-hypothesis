@@ -1,3 +1,4 @@
+import Formalism.HermitianCurvature.HermitianCurvatureProofs.WeightedL2ConstMul
 import Formalism.HermitianCurvature.StatementLE
 import Formalism.HermitianCurvature.HermitianCurvatureProofs.MeasIterDeriv
 import Formalism.HermitianCurvature.HermitianCurvatureProofs.ThetaLimit
@@ -69,40 +70,7 @@ theorem weighted_L2_const_mul (B : Base) (wt : B.Ω → ℝ) (a : ℂ) (f : B.Ω
 
 theorem weighted_L2_add (B : Base) (wt : B.Ω → ℝ) (hw : ∀ ω, 0 ≤ wt ω) (f g : B.Ω → ℂ) (hf : WeightedL2 B wt f)
     (hg : WeightedL2 B wt g) : WeightedL2 B wt (fun ω => f ω + g ω) := by
-  refine ⟨hf.1.add hg.1, ?_⟩
-  have hcross : AEStronglyMeasurable
-      (fun ω => ((wt ω * ‖f ω‖ ^ 2 : ℝ) : ℂ) * conj (g ω) / conj (f ω)) B.μ := by
-    have h1 : AEMeasurable (fun ω => ((wt ω * ‖f ω‖ ^ 2 : ℝ) : ℂ)) B.μ :=
-      Complex.measurable_ofReal.comp_aemeasurable hf.2.1.aemeasurable
-    have h2 : AEMeasurable (fun ω => conj (g ω)) B.μ :=
-      (Complex.continuous_conj.measurable).comp_aemeasurable hg.1.aemeasurable
-    have h3 : AEMeasurable (fun ω => conj (f ω)) B.μ :=
-      (Complex.continuous_conj.measurable).comp_aemeasurable hf.1.aemeasurable
-    exact ((h1.mul h2).div h3).aestronglyMeasurable
-  have heq : (fun ω => wt ω * ‖f ω + g ω‖ ^ 2) = fun ω => wt ω * ‖f ω‖ ^ 2 + wt ω * ‖g ω‖ ^ 2 +
-      2 * (((wt ω * ‖f ω‖ ^ 2 : ℝ) : ℂ) * conj (g ω) / conj (f ω)).re := by
-    funext ω
-    by_cases h0 : f ω = 0
-    · simp [h0]
-    · have hc : conj (f ω) ≠ 0 := by simpa using h0
-      have h1 : ((wt ω * ‖f ω‖ ^ 2 : ℝ) : ℂ) * conj (g ω) / conj (f ω) = (wt ω : ℂ) * (f ω * conj (g ω)) := by
-        rw [div_eq_iff hc]
-        push_cast
-        rw [← Complex.mul_conj']
-        ring
-      rw [h1, Complex.re_ofReal_mul, Complex.sq_norm, Complex.sq_norm, Complex.sq_norm, Complex.normSq_add]
-      ring
-  have hmeas : AEStronglyMeasurable (fun ω => wt ω * ‖f ω + g ω‖ ^ 2) B.μ := by
-    rw [heq]
-    exact (hf.2.1.add hg.2.1).add ((Complex.continuous_re.comp_aestronglyMeasurable hcross).const_mul 2)
-  refine Integrable.mono' ((hf.2.const_mul 2).add (hg.2.const_mul 2)) hmeas (Filter.Eventually.of_forall ?_)
-  intro ω
-  have h1 : ‖f ω + g ω‖ ≤ ‖f ω‖ + ‖g ω‖ := norm_add_le _ _
-  have h2 : ‖f ω + g ω‖ ^ 2 ≤ 2 * ‖f ω‖ ^ 2 + 2 * ‖g ω‖ ^ 2 := by
-    nlinarith [norm_nonneg (f ω + g ω), norm_nonneg (f ω), norm_nonneg (g ω), sq_nonneg (‖f ω‖ - ‖g ω‖)]
-  rw [Real.norm_of_nonneg (mul_nonneg (hw ω) (by positivity))]
-  simp only [Pi.add_apply]
-  nlinarith [hw ω, mul_le_mul_of_nonneg_left h2 (hw ω)]
+  exact Formalism.FourierDecayAlt.P.LEx1.weighted_L2_add B wt hw f g hf hg
 
 theorem weighted_L2_sum (B : Base) (wt : B.Ω → ℝ) (hw : ∀ ω, 0 ≤ wt ω) {I : Type} (s : Finset I) (f : I → B.Ω → ℂ)
     (hf : ∀ i ∈ s, WeightedL2 B wt (f i)) : WeightedL2 B wt (fun ω => ∑ i ∈ s, f i ω) := by
@@ -128,31 +96,7 @@ theorem extract (N d : ℕ) (grid : Fin N → Finset ℝ) (hg : ∀ a, (grid a).
     (c : (Fin N → Fin (d + 1)) → ℂ) (κ : Fin N → Fin (d + 1)) :
     c κ = ∑ g ∈ Fintype.piFinset grid, ((∏ a, (Lagrange.basis (grid a) id (g a)).coeff (κ a : ℕ) : ℝ) : ℂ) *
       ∑ κ' : Fin N → Fin (d + 1), ((∏ a, (g a) ^ (κ' a : ℕ) : ℝ) : ℂ) * c κ' := by
-  simp_rw [Finset.mul_sum]
-  rw [Finset.sum_comm]
-  have key : ∀ κ' : Fin N → Fin (d + 1), ∑ g ∈ Fintype.piFinset grid,
-      ((∏ a, (Lagrange.basis (grid a) id (g a)).coeff (κ a : ℕ) : ℝ) : ℂ) *
-        (((∏ a, (g a) ^ (κ' a : ℕ) : ℝ) : ℂ) * c κ') = (if κ = κ' then 1 else 0) * c κ' := by
-    intro κ'
-    have h1 : ∑ g ∈ Fintype.piFinset grid, (∏ a, (Lagrange.basis (grid a) id (g a)).coeff (κ a : ℕ)) *
-        (∏ a, (g a) ^ (κ' a : ℕ)) = if κ = κ' then (1 : ℝ) else 0 := by
-      simp_rw [← Finset.prod_mul_distrib]
-      rw [← Finset.prod_univ_sum (t := grid)
-        (f := fun a x => (Lagrange.basis (grid a) id x).coeff (κ a : ℕ) * x ^ (κ' a : ℕ))]
-      have h3 : ∀ a, ∑ x ∈ grid a, (Lagrange.basis (grid a) id x).coeff (κ a : ℕ) * x ^ (κ' a : ℕ) =
-          if (κ a : ℕ) = (κ' a : ℕ) then 1 else 0 :=
-        fun a => coeff_id (grid a) d _ _ (hg a) (Nat.lt_succ_iff.1 (κ' a).2)
-      simp_rw [h3]
-      by_cases h : κ = κ'
-      · subst h; simp
-      · rw [if_neg h]
-        obtain ⟨a, ha⟩ := Function.ne_iff.1 h
-        apply Finset.prod_eq_zero (Finset.mem_univ a)
-        rw [if_neg]; intro hh; exact ha (Fin.ext hh)
-    have h4 : ((if κ = κ' then (1 : ℂ) else 0)) = (((if κ = κ' then (1 : ℝ) else 0) : ℝ) : ℂ) := by
-      split_ifs <;> simp
-    rw [h4, ← h1]; push_cast; rw [Finset.sum_mul]; apply Finset.sum_congr rfl; intros; ring
-  simp_rw [key]; simp
+  exact Formalism.FourierDecayAlt.P.LEx1.extract N d grid hg c κ
 
 theorem coefficient_L2 : InterpolationCoefficientsInL2 := by
   intro B N d wt m c J hw hJ hm hL κ
@@ -193,53 +137,7 @@ theorem meas_th (B : Base) (ε σ : ℝ) : Measurable fun ω => th ε σ (B.G ω
   exact ((B.G_meas).div (B.G_meas.add_const ε)).pow_const σ
 
 theorem coefIntegrable : CoefIntegrable := by
-  intro B S σ _ hM hW h4 h4' ε hε Y hY p
-  obtain ⟨c, hc⟩ := h4 Y hY
-  have hth : ∀ ω, 0 ≤ th ε σ (B.G ω) := fun ω =>
-    Real.rpow_nonneg (div_nonneg (B.G_pos ω).le (by have := B.G_pos ω; linarith)) _
-  have hd : ∀ ω k, 0 ≤ S.d Y ω k := fun ω k => (hW.2 Y hY ω k).le
-  have hk : ∀ k, WeightedL2 B (fun ω => th ε σ (B.G ω) * S.d Y ω k) (fun ω => S.ds Y p ω k) := by
-    intro k
-    have hco := coefficient_L2 B 1 (S.r + 1) (fun ω => th ε σ (B.G ω) * S.d Y ω k) (fun y ω => S.gs Y (y 0) ω k)
-      (fun κ ω => c (κ 0 : ℕ) ω k) (fun _ => Set.univ) (fun ω => mul_nonneg (hth ω) (hd ω k))
-      (fun _ => Set.infinite_univ)
-      (by
-        intro y ω
-        show conjS B (S.g Y) S.X (y 0) ω k = _
-        rw [hc (y 0) ω k]
-        rw [← (Equiv.funUnique (Fin 1) (Fin (S.r + 1 + 1))).symm.sum_comp]
-        rw [← Fin.sum_univ_eq_sum_range (fun q => ((y 0 : ℝ) : ℂ) ^ q * c q ω k)]
-        apply Finset.sum_congr rfl
-        intro i _
-        simp [Equiv.funUnique])
-      (by
-        intro y _
-        refine ⟨((hM.2.2 Y hY).2 (y 0) k).aestronglyMeasurable, ?_⟩
-        refine Integrable.mono' ((h4' ε hε).1 Y hY (y 0)) ?_ (Filter.Eventually.of_forall ?_)
-        · exact (((meas_th B ε σ).mul ((hM.2.2 Y hY).1 k)).mul
-            (((hM.2.2 Y hY).2 (y 0) k).norm.pow_const 2)).aestronglyMeasurable
-        · intro ω
-          rw [Real.norm_of_nonneg (mul_nonneg (mul_nonneg (hth ω) (hd ω k)) (by positivity)), mul_assoc]
-          apply mul_le_mul_of_nonneg_left _ (hth ω)
-          unfold LE.sq
-          exact Finset.single_le_sum (f := fun k => S.d Y ω k * ‖S.gs Y (y 0) ω k‖ ^ 2)
-            (fun k _ => mul_nonneg (hd ω k) (by positivity)) (Finset.mem_univ k))
-    have hds : (fun ω => S.ds Y p ω k) =
-        fun ω => (p.factorial : ℂ) * (if p < S.r + 1 + 1 then c p ω k else 0) := by
-      funext ω
-      exact dS_poly B (S.g Y) S.X (S.r + 1) c hc p ω k
-    rw [hds]
-    apply weighted_L2_const_mul
-    by_cases hp : p < S.r + 1 + 1
-    · simp only [if_pos hp]
-      exact hco (fun _ => ⟨p, hp⟩)
-    · simp only [if_neg hp]
-      exact weighted_L2_zero B _
-  have he : (fun ω => th ε σ (B.G ω) * LE.sq B (S.d Y) (S.ds Y p) ω) =
-      fun ω => ∑ k, (th ε σ (B.G ω) * S.d Y ω k) * ‖S.ds Y p ω k‖ ^ 2 := by
-    funext ω; unfold LE.sq; rw [Finset.mul_sum]; apply Finset.sum_congr rfl; intros; ring
-  rw [he]
-  exact integrable_finset_sum _ (fun k _ => (hk k).2)
+  exact Formalism.FourierDecayAlt.P.LEx1.coefIntegrable
 
 end Formalism.FourierDecayAlt.P.LEx2
 
@@ -281,51 +179,7 @@ theorem opt_delta (x A Bb : ℝ) (hA : 0 ≤ A) (hB : 0 ≤ Bb)
       rw [e1, e2] at this; linarith
 
 theorem csTerm : CSTerm := by
-  intro hTB hC B S σ ε h4 hε hM hW hI4 hI4' hCI Y hY p
-  have hth : ∀ ω, 0 ≤ th ε σ (B.G ω) := fun ω =>
-    Real.rpow_nonneg (div_nonneg (B.G_pos ω).le (by have := B.G_pos ω; linarith)) _
-  have hd : ∀ ω k, 0 ≤ S.d Y ω k := fun ω k => (hW.2 Y hY ω k).le
-  have hds0 : S.ds Y 0 = S.gX Y := dS_zero B _ _
-  have hEi : Integrable (fun ω => th ε σ (B.G ω) * LE.sq B (S.d Y) (S.gX Y) ω) B.μ := by
-    have := hCI ε hε Y hY 0
-    rwa [hds0] at this
-  have hDi := hCI ε hε Y hY p
-  have hfac : (0:ℝ) < p.factorial := by exact_mod_cast p.factorial_pos
-  have hσ : 0 < 4 * σ := by linarith
-  set K : ℝ := Real.exp 1 * p.factorial * (4 * σ) ^ p with hK
-  have hKpos : 0 < K := by positivity
-  have hE0 : 0 ≤ S.En ε σ Y := integral_nonneg fun ω => mul_nonneg (hth ω) (sq_nonneg' B _ hd _ ω)
-  have hD0 : 0 ≤ S.Dn ε σ Y p := integral_nonneg fun ω => mul_nonneg (hth ω) (sq_nonneg' B _ hd _ ω)
-  set I : ℂ := ∫ ω, (ld p (th ε σ) (B.G ω) : ℂ) * pr B (S.d Y) (S.gX Y) (S.ds Y p) ω ∂B.μ with hI
-  have hb : ∀ δ : ℝ, 0 < δ → ‖I‖ / K ≤ (S.En ε σ Y / δ + δ * S.Dn ε σ Y p) / 2 := by
-    intro δ hδ
-    have hg : Integrable (fun ω => K * (((th ε σ (B.G ω) * LE.sq B (S.d Y) (S.gX Y) ω) / δ +
-        δ * (th ε σ (B.G ω) * LE.sq B (S.d Y) (S.ds Y p) ω)) / 2)) B.μ :=
-      (((hEi.div_const δ).add (hDi.const_mul δ)).div_const 2).const_mul K
-    have h1 := norm_integral_le_of_norm_le hg (f := fun ω => (ld p (th ε σ) (B.G ω) : ℂ) *
-        pr B (S.d Y) (S.gX Y) (S.ds Y p) ω) (Eventually.of_forall fun ω => by
-      rw [norm_mul, Complex.norm_real, Real.norm_eq_abs]
-      have a1 := hTB hC σ ε h4 hε p (B.G ω) (B.G_pos ω)
-      have a2 := pr_bound B (S.d Y) hd (S.gX Y) (S.ds Y p) δ hδ ω
-      calc |ld p (th ε σ) (B.G ω)| * ‖pr B (S.d Y) (S.gX Y) (S.ds Y p) ω‖
-          ≤ (K * th ε σ (B.G ω)) * ((LE.sq B (S.d Y) (S.gX Y) ω / δ + δ * LE.sq B (S.d Y) (S.ds Y p) ω) / 2) :=
-            mul_le_mul a1 a2 (norm_nonneg _) (mul_nonneg hKpos.le (hth ω))
-        _ = _ := by ring)
-    have h2 : ∫ ω, K * (((th ε σ (B.G ω) * LE.sq B (S.d Y) (S.gX Y) ω) / δ +
-        δ * (th ε σ (B.G ω) * LE.sq B (S.d Y) (S.ds Y p) ω)) / 2) ∂B.μ =
-        K * ((S.En ε σ Y / δ + δ * S.Dn ε σ Y p) / 2) := by
-      rw [integral_const_mul, integral_div, integral_add (hEi.div_const δ) (hDi.const_mul δ), integral_div,
-        integral_const_mul]
-      rfl
-    rw [h2] at h1
-    rw [div_le_iff₀ hKpos]
-    linarith
-  have hfin := opt_delta _ _ _ hE0 hD0 hb
-  rw [div_le_iff₀ hKpos] at hfin
-  show ‖I / (p.factorial : ℂ)‖ ≤ _
-  rw [norm_div, Complex.norm_natCast, div_le_iff₀ hfac]
-  calc ‖I‖ ≤ √(S.En ε σ Y) * √(S.Dn ε σ Y p) * K := hfin
-    _ = _ := by rw [hK]; ring
+  exact Formalism.FourierDecayAlt.P.LEx1.csTerm
 
 end Formalism.FourierDecayAlt.P.LEx2
 
@@ -430,34 +284,7 @@ open MeasureTheory Filter Topology Finset
 open scoped ComplexConjugate
 
 theorem cutTheta : CutTheta := by
-  intro hC c σ ε h4 hε p
-  choose Cc hCc using fun i => cutBound c 1 i le_rfl
-  have hexp : ∀ ε₂ x : ℝ, ld p (fun y => c.sc ε₂ 1 y * th ε σ y) x =
-      ∑ i ∈ range (p + 1), (p.choose i : ℝ) * ld i (c.sc ε₂ 1) x * ld (p - i) (th ε σ) x := by
-    intro ε₂ x
-    unfold ld
-    have hf : ContDiff ℝ ((⊤ : ℕ∞) : WithTop ℕ∞) (fun u => c.sc ε₂ 1 (Real.exp u)) := smoothLog_sc c ε₂ 1
-    have hg : ContDiff ℝ ((⊤ : ℕ∞) : WithTop ℕ∞) (fun u => th ε σ (Real.exp u)) := thetaSmooth ε σ hε
-    exact iteratedDeriv_fun_mul (hf.contDiffAt.of_le (by exact_mod_cast le_top))
-      (hg.contDiffAt.of_le (by exact_mod_cast le_top))
-  refine ⟨∑ i ∈ range (p + 1), (p.choose i : ℝ) * Cc i *
-      (Real.exp 1 * (p - i).factorial * (4 * σ) ^ (p - i)), fun ε₂ x h2 hx => ⟨?_, ?_⟩⟩
-  · rw [hexp, Finset.sum_mul]
-    refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => ?_)
-    rw [abs_mul, abs_mul, Nat.abs_cast]
-    have a := (hCc i ε₂ x h2 hx).1
-    have b := thetaBound hC σ ε h4 hε (p - i) x hx
-    calc (p.choose i : ℝ) * |ld i (c.sc ε₂ 1) x| * |ld (p - i) (th ε σ) x|
-        ≤ ((p.choose i : ℝ) * Cc i) * (Real.exp 1 * (p - i).factorial * (4 * σ) ^ (p - i) * th ε σ x) :=
-          mul_le_mul (mul_le_mul_of_nonneg_left a (Nat.cast_nonneg _)) b (abs_nonneg _)
-            (mul_nonneg (Nat.cast_nonneg _) ((abs_nonneg _).trans a))
-      _ = _ := by ring
-  · intro hlt
-    rw [hexp, Finset.sum_eq_single 0]
-    · rw [(hCc 0 ε₂ x h2 hx).2.2 hlt]; simp
-    · intro i _ hi
-      rw [(hCc i ε₂ x h2 hx).2.2 hlt, if_neg hi]; simp
-    · simp
+  exact Formalism.FourierDecayAlt.P.LEx1.cutTheta
 
 end Formalism.FourierDecayAlt.P.LEx2
 
@@ -472,34 +299,7 @@ theorem L3 (hC : E.CauchyTheta) (hCT : CutTheta) (hTS : ThetaSmooth) (hTR : Thet
     (∀ ε₂ : ℝ, 0 < ε₂ → Integrable (fun ω => (ld p (fun y => c.sc ε₂ 1 y * th ε σ y) (B.G ω) : ℂ) * h ω) B.μ) ∧
     Tendsto (fun ε₂ : ℝ => ∫ ω, (ld p (fun y => c.sc ε₂ 1 y * th ε σ y) (B.G ω) : ℂ) * h ω ∂B.μ) (𝓝[>] 0)
       (𝓝 (∫ ω, (ld p (th ε σ) (B.G ω) : ℂ) * h ω ∂B.μ)) := by
-  obtain ⟨C, hCb⟩ := hCT hC c σ ε h4 hε p
-  have hsm : ∀ ε₂ : ℝ, SmoothLog (fun y => c.sc ε₂ 1 y * th ε σ y) := fun ε₂ =>
-    ContDiff.mul (smoothLog_sc c ε₂ 1) (hTS ε σ hε)
-  have hmeas : ∀ ε₂ : ℝ, AEStronglyMeasurable
-      (fun ω => (ld p (fun y => c.sc ε₂ 1 y * th ε σ y) (B.G ω) : ℂ) * h ω) B.μ := fun ε₂ =>
-    ((Complex.measurable_ofReal.comp ((meas_ld p _ (hsm ε₂)).comp B.G_meas)).aestronglyMeasurable.mul hm)
-  have hbound : ∀ ε₂ : ℝ, 0 < ε₂ → ∀ ω,
-      ‖(ld p (fun y => c.sc ε₂ 1 y * th ε σ y) (B.G ω) : ℂ) * h ω‖ ≤ |C| * b ω := by
-    intro ε₂ h2 ω
-    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs]
-    have a := (hCb ε₂ (B.G ω) h2 (B.G_pos ω)).1
-    have t0 := (hTR ε σ (B.G ω) hε (by linarith) (B.G_pos ω)).1.le
-    calc _ ≤ (C * th ε σ (B.G ω)) * ‖h ω‖ := mul_le_mul_of_nonneg_right a (norm_nonneg _)
-      _ = C * (th ε σ (B.G ω) * ‖h ω‖) := by ring
-      _ ≤ |C| * (th ε σ (B.G ω) * ‖h ω‖) :=
-          mul_le_mul_of_nonneg_right (le_abs_self C) (mul_nonneg t0 (norm_nonneg _))
-      _ ≤ |C| * b ω := mul_le_mul_of_nonneg_left (hbd ω) (abs_nonneg _)
-  refine ⟨fun ε₂ h2 => Integrable.mono' (hb.const_mul |C|) (hmeas ε₂) (Eventually.of_forall (hbound ε₂ h2)), ?_⟩
-  refine tendsto_integral_filter_of_dominated_convergence (fun ω => |C| * b ω) (Eventually.of_forall hmeas) ?_
-    (hb.const_mul _) ?_
-  · filter_upwards [self_mem_nhdsWithin] with ε₂ h2
-    exact Eventually.of_forall (hbound ε₂ h2)
-  · refine Eventually.of_forall fun ω => ?_
-    apply tendsto_const_nhds.congr'
-    have e1 : ∀ᶠ ε₂ : ℝ in 𝓝[>] 0, ε₂ < B.G ω :=
-      (eventually_lt_nhds (B.G_pos ω)).filter_mono nhdsWithin_le_nhds
-    filter_upwards [self_mem_nhdsWithin, e1] with ε₂ h2 h3
-    rw [(hCb ε₂ (B.G ω) h2 (B.G_pos ω)).2 h3]
+  exact Formalism.FourierDecayAlt.P.LEx1.L3 hC hCT hTS hTR B c σ ε h4 hε p h hm b hb hbd
 
 theorem adj : Adj := by
   intro hC hLeib hCT hCI hTS hTR B S c σ h4 hM hW hI3 hAdj hJet hI4 hI4' hInt ε hε Y hY

@@ -1,4 +1,4 @@
-import Mathlib
+import GroundTheory.AutomorphicForms.UnitaryRepresentations.IsInvariantIffCommuteStarProjection
 
 namespace CompanionTheory.LimBd.URep
 
@@ -89,68 +89,16 @@ noncomputable def ofLinearIsometryEquiv (ρ : G →* (H ≃ₗᵢ[ℂ] H))
 theorem continuous_of_weak (ρ : G →* unitary (H →L[ℂ] H))
     (hρ : ∀ v w : H, Continuous fun g => ⟪(ρ g : H →L[ℂ] H) v, w⟫_ℂ) (v : H) :
     Continuous fun g => (ρ g : H →L[ℂ] H) v := by
-  rw [continuous_iff_continuousAt]
-  intro h
-  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
-  set w := (ρ h : H →L[ℂ] H) v
-  have hsq : ∀ g, ‖(ρ g : H →L[ℂ] H) v - w‖ =
-      Real.sqrt (2 * ‖v‖ ^ 2 - 2 * RCLike.re ⟪(ρ g : H →L[ℂ] H) v, w⟫_ℂ) := by
-    intro g
-    rw [← Real.sqrt_sq (norm_nonneg _), @norm_sub_sq ℂ, Unitary.norm_map, Unitary.norm_map]
-    congr 1
-    ring
-  have hc : Continuous fun g =>
-      Real.sqrt (2 * ‖v‖ ^ 2 - 2 * RCLike.re ⟪(ρ g : H →L[ℂ] H) v, w⟫_ℂ) :=
-    (continuous_const.sub (continuous_const.mul (RCLike.continuous_re.comp (hρ v w)))).sqrt
-  have h0 : Real.sqrt (2 * ‖v‖ ^ 2 - 2 * RCLike.re ⟪(ρ h : H →L[ℂ] H) v, w⟫_ℂ) = 0 := by
-    rw [← hsq, sub_self, norm_zero]
-  simp_rw [hsq]
-  rw [← h0]
-  exact hc.continuousAt
+  exact GroundTheory.Automorphic.UnitaryRep.continuous_of_weak ρ hρ v
 
 theorem continuous_of_continuousAt_one [IsTopologicalGroup G] (ρ : G →* unitary (H →L[ℂ] H))
     (hρ : ∀ v : H, ContinuousAt (fun g => (ρ g : H →L[ℂ] H) v) 1) (v : H) :
     Continuous fun g => (ρ g : H →L[ℂ] H) v := by
-  rw [continuous_iff_continuousAt]
-  intro h
-  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
-  have key : ∀ g, ‖(ρ g : H →L[ℂ] H) v - (ρ h : H →L[ℂ] H) v‖ =
-      ‖(ρ (h⁻¹ * g) : H →L[ℂ] H) v - v‖ := by
-    intro g
-    have e : ρ g = ρ h * ρ (h⁻¹ * g) := by rw [← MonoidHom.map_mul, mul_inv_cancel_left]
-    have : (ρ g : H →L[ℂ] H) v - (ρ h : H →L[ℂ] H) v =
-        (ρ h : H →L[ℂ] H) ((ρ (h⁻¹ * g) : H →L[ℂ] H) v - v) := by
-      rw [map_sub, e]
-      rfl
-    rw [this, Unitary.norm_map]
-  simp_rw [key]
-  have ht : Tendsto (fun g => h⁻¹ * g) (𝓝 h) (𝓝 1) := by
-    have := (continuous_const_mul h⁻¹).tendsto h
-    rwa [inv_mul_cancel] at this
-  have h1 := Filter.Tendsto.comp (hρ v) ht
-  rw [tendsto_iff_norm_sub_tendsto_zero] at h1
-  simpa [Function.comp_def] using h1
+  exact GroundTheory.Automorphic.UnitaryRep.continuous_of_continuousAt_one ρ hρ v
 
 theorem continuous_action : Continuous fun p : G × H => π p.1 p.2 := by
-  rw [continuous_iff_continuousAt]
-  rintro ⟨h, w⟩
-  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
-  have hle : ∀ p : G × H, ‖π p.1 p.2 - π h w‖ ≤ ‖p.2 - w‖ + ‖π p.1 w - π h w‖ := by
-    intro p
-    calc ‖π p.1 p.2 - π h w‖ = ‖π p.1 (p.2 - w) + (π p.1 w - π h w)‖ := by
-          rw [map_sub]; congr 1; abel
-      _ ≤ ‖π p.1 (p.2 - w)‖ + ‖π p.1 w - π h w‖ := norm_add_le _ _
-      _ = ‖p.2 - w‖ + ‖π p.1 w - π h w‖ := by rw [norm_map]
-  refine squeeze_zero (fun _ => norm_nonneg _) hle ?_
-  rw [← add_zero (0 : ℝ)]
-  refine Tendsto.add ?_ ?_
-  · have : Tendsto (fun p : G × H => p.2) (𝓝 (h, w)) (𝓝 w) := continuous_snd.tendsto _
-    rw [tendsto_iff_norm_sub_tendsto_zero] at this
-    exact this
-  · have : Tendsto (fun p : G × H => π p.1 w) (𝓝 (h, w)) (𝓝 (π h w)) :=
-      ((π.continuous_orbit w).comp continuous_fst).tendsto _
-    rw [tendsto_iff_norm_sub_tendsto_zero] at this
-    exact this
+  exact GroundTheory.Automorphic.UnitaryRep.continuous_action
+    (π := ⟨π.toHom, π.continuous_orbit'⟩)
 
 lemma continuous_inner_orbit (v w : H) : Continuous fun g => ⟪π g v, w⟫_ℂ :=
   (π.continuous_orbit v).inner continuous_const
@@ -182,22 +130,8 @@ theorem IsInvariant.topologicalClosure {V : Submodule ℂ H} (hV : π.IsInvarian
 
 theorem isInvariant_iff_commute_starProjection (V : Submodule ℂ H) [V.HasOrthogonalProjection] :
     π.IsInvariant V ↔ ∀ g, Commute (π g) V.starProjection := by
-  constructor
-  · intro hV g
-    ext v
-    have hdec : v = V.starProjection v + (v - V.starProjection v) := by abel
-    have hq : v - V.starProjection v ∈ Vᗮ := V.sub_starProjection_mem_orthogonal v
-    have hp : V.starProjection v ∈ V := V.starProjection_apply_mem v
-    have e1 : V.starProjection (π g v) = π g (V.starProjection v) := by
-      conv_lhs => rw [hdec, map_add, map_add,
-        Submodule.starProjection_eq_self_iff.mpr (hV g _ hp),
-        (V.starProjection_apply_eq_zero_iff).mpr (hV.orthogonal g _ hq), add_zero]
-    exact e1.symm
-  · intro h g v hv
-    rw [← Submodule.starProjection_eq_self_iff] at hv ⊢
-    have : π g (V.starProjection v) = V.starProjection (π g v) :=
-      congrArg (fun T : H →L[ℂ] H => T v) (h g)
-    rw [← this, hv]
+  exact GroundTheory.Automorphic.UnitaryRep.isInvariant_iff_commute_starProjection
+    (π := ⟨π.toHom, π.continuous_orbit'⟩) V
 
 variable (π) in
 
@@ -300,31 +234,9 @@ def IsIrreducible : Prop :=
   Nontrivial H ∧ ∀ V : Submodule ℂ H, IsClosed (V : Set H) → π.IsInvariant V → V = ⊥ ∨ V = ⊤
 
 theorem IsIrreducible.of_equiv (hπ : π.IsIrreducible) (e : π.Equiv σ) : σ.IsIrreducible := by
-  obtain ⟨hnt, hπ⟩ := hπ
-  refine ⟨e.toLinearIsometryEquiv.toEquiv.nontrivial_congr.mp hnt, fun W hW hWinv => ?_⟩
-  let E : H →L[ℂ] K := e.toLinearIsometryEquiv
-  have hcl : IsClosed ((W.comap (E : H →ₗ[ℂ] K) : Submodule ℂ H) : Set H) :=
-    hW.preimage E.continuous
-  have hinv : π.IsInvariant (W.comap (E : H →ₗ[ℂ] K)) := by
-    intro g v hv
-    simp only [Submodule.mem_comap, ContinuousLinearMap.coe_coe] at hv ⊢
-    rw [show E (π g v) = σ g (E v) from e.map_apply' g v]
-    exact hWinv g _ hv
-  have hsurj : Function.Surjective E := e.toLinearIsometryEquiv.surjective
-  rcases hπ _ hcl hinv with h | h
-  · left
-    rw [eq_bot_iff]
-    intro w hw
-    obtain ⟨v, rfl⟩ := hsurj w
-    have : v ∈ W.comap (E : H →ₗ[ℂ] K) := hw
-    rw [h, Submodule.mem_bot] at this
-    simp [this]
-  · right
-    rw [eq_top_iff]
-    intro w _
-    obtain ⟨v, rfl⟩ := hsurj w
-    have : v ∈ W.comap (E : H →ₗ[ℂ] K) := by rw [h]; exact Submodule.mem_top
-    exact this
+  exact GroundTheory.Automorphic.UnitaryRep.IsIrreducible.of_equiv
+    (π := ⟨π.toHom, π.continuous_orbit'⟩) (σ := ⟨σ.toHom, σ.continuous_orbit'⟩)
+    hπ ⟨e.toLinearIsometryEquiv, e.map_apply'⟩
 
 theorem IsEquivalent.isIrreducible_iff (h : π.IsEquivalent σ) :
     π.IsIrreducible ↔ σ.IsIrreducible :=

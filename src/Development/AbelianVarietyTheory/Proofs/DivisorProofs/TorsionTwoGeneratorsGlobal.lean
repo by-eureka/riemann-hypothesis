@@ -18,20 +18,13 @@ theorem torsion_gens_glue_of_local (F : Type) [Field F] [NumberField F] (M : Typ
     rw [hJdef, Ne, Ideal.span_singleton_eq_bot, Nat.cast_eq_zero]; omega
   haveI : Finite (𝓞 F ⧸ J) := Ideal.finiteQuotientOfFreeOfNeBot J hJ
   have hPfin : {𝔭 : Ideal (𝓞 F) | 𝔭.IsMaximal ∧ J ≤ 𝔭}.Finite := by
-    have key : ∀ 𝔭 𝔮 : Ideal (𝓞 F), J ≤ 𝔮 →
-        (Ideal.Quotient.mk J) '' (𝔭 : Set (𝓞 F)) = (Ideal.Quotient.mk J) '' (𝔮 : Set (𝓞 F)) →
-        𝔭 ≤ 𝔮 := by
-      intro 𝔭 𝔮 hq he x hx
-      have hmem : Ideal.Quotient.mk J x ∈ (Ideal.Quotient.mk J) '' (𝔮 : Set (𝓞 F)) :=
-        he ▸ ⟨x, hx, rfl⟩
-      obtain ⟨y, hy, hxy⟩ := hmem
-      have hyx : y - x ∈ J := Ideal.Quotient.eq.mp hxy
-      have := 𝔮.sub_mem hy (hq hyx)
-      simpa using this
-    refine Set.Finite.of_finite_image (f := fun 𝔭 : Ideal (𝓞 F) =>
-      (Ideal.Quotient.mk J) '' (𝔭 : Set (𝓞 F))) (Set.toFinite _) ?_
-    intro 𝔭 h𝔭 𝔮 h𝔮 he
-    exact le_antisymm (key _ _ h𝔮.2 he) (key _ _ h𝔭.2 he.symm)
+    refine (Set.finite_range fun P : Ideal (𝓞 F ⧸ J) =>
+      Ideal.comap (Ideal.Quotient.mk J) P).subset ?_
+    rintro 𝔭 ⟨-, hle⟩
+    refine ⟨Ideal.map (Ideal.Quotient.mk J) 𝔭, ?_⟩
+    show Ideal.comap (Ideal.Quotient.mk J) (Ideal.map (Ideal.Quotient.mk J) 𝔭) = 𝔭
+    rw [Ideal.comap_map_of_surjective _ Ideal.Quotient.mk_surjective, sup_eq_left]
+    rwa [← RingHom.ker_eq_comap_bot, Ideal.mk_ker]
   set P := hPfin.toFinset with hPdef
   have hP : ∀ 𝔭, 𝔭 ∈ P ↔ 𝔭.IsMaximal ∧ J ≤ 𝔭 := fun 𝔭 => Set.Finite.mem_toFinset _
   have hmax : ∀ j : P, j.1.IsMaximal := fun j => ((hP j.1).1 j.2).1

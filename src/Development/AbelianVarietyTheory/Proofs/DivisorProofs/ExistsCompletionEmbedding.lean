@@ -1,4 +1,4 @@
-import Mathlib
+import Development.AbelianVarietyTheory.Proofs.FoundationProofs.ExistsPowerSeriesCompletionEmbedding
 import Development.AbelianVarietyTheory.Proofs.FoundationProofs.PowLeSpanPowSup
 import Development.AbelianVarietyTheory.Proofs.FoundationProofs.ImportsBis
 import Development.AbelianVarietyTheory.Proofs.FoundationProofs.Target
@@ -53,33 +53,7 @@ theorem aeval_mem_of_dvd (hπ : π ∈ Q) (m : ℕ) (r : k[X]) (h : X ^ m ∣ r)
 
 theorem dvd_of_aeval_mem (hπ : π ∈ Q) (hnot : ∀ m : ℕ, π ^ m ∉ Q ^ (m + 1)) :
     ∀ (m : ℕ) (r : k[X]), aeval π r ∈ Q ^ m → X ^ m ∣ r := by
-  intro m
-  induction m with
-  | zero => intro r _; simp
-  | succ m ih =>
-    intro r hr
-    obtain ⟨s, rfl⟩ := ih r (Ideal.pow_le_pow_right (Nat.le_succ m) hr)
-    obtain ⟨s', hs'⟩ := Polynomial.X_dvd_sub_C (p := s)
-    have hs : s = C (s.coeff 0) + X * s' := by rw [← hs']; ring
-    by_cases h0 : s.coeff 0 = 0
-    · rw [hs, h0, map_zero, zero_add, ← mul_assoc, ← pow_succ]
-      exact dvd_mul_right _ _
-    · exfalso
-      apply hnot m
-      have e0 : aeval π s = algebraMap k A (s.coeff 0) + π * aeval π s' := by
-        conv_lhs => rw [hs]
-        simp [aeval_C]
-      have e : aeval π (X ^ m * s) =
-          π ^ m * algebraMap k A (s.coeff 0) + π ^ (m + 1) * aeval π s' := by
-        rw [map_mul, map_pow, aeval_X, e0]; ring
-      rw [e] at hr
-      have h2 : π ^ m * algebraMap k A (s.coeff 0) ∈ Q ^ (m + 1) := by
-        have h3 : π ^ (m + 1) * aeval π s' ∈ Q ^ (m + 1) :=
-          Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hπ _)
-        have := Ideal.sub_mem _ hr h3
-        simpa using this
-      have h4 := Ideal.mul_mem_right (algebraMap k A (s.coeff 0)⁻¹) _ h2
-      rwa [mul_assoc, ← map_mul, mul_inv_cancel₀ h0, map_one, mul_one] at h4
+  exact GlobalTheory.CurveCompletion.dvd_of_aeval_mem Q π hπ hnot
 
 theorem aeval_mem_iff (hπ : π ∈ Q) (hnot : ∀ m : ℕ, π ^ m ∉ Q ^ (m + 1)) (m : ℕ) (r : k[X]) :
     aeval π r ∈ Q ^ m ↔ X ^ m ∣ r :=

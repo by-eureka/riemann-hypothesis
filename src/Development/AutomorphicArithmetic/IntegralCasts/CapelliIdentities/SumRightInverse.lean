@@ -22,10 +22,8 @@ theorem UpperTheory.Reformulated.B.SumRightInverse.sum_rightInv :
   let C : G ⧸ K → Set G := fun Q => (fun g => (Quotient.out Q)⁻¹ * g) ⁻¹' (K : Set G)
   have hC : ∀ Q g, g ∈ C Q ↔ (QuotientGroup.mk g : G ⧸ K) = Q := by
     intro Q g
-    have h := QuotientGroup.eq (s := K) (a := Quotient.out Q) (b := g)
-    rw [QuotientGroup.out_eq'] at h
-    rw [eq_comm, h]
-    rfl
+    simpa only [C, Set.mem_preimage, QuotientGroup.out_eq', SetLike.mem_coe, eq_comm] using
+      (QuotientGroup.eq (s := K) (a := Quotient.out Q) (b := g)).symm
   have hout : ∀ Q ∈ hfin.toFinset, Quotient.out Q ∈ S := by
     intro Q hQ
     obtain ⟨s, hs, rfl⟩ := hfin.mem_toFinset.1 hQ
@@ -42,13 +40,11 @@ theorem UpperTheory.Reformulated.B.SumRightInverse.sum_rightInv :
     · intro hg
       exact ⟨_, hfin.mem_toFinset.2 ⟨g, hg, rfl⟩, (hC _ g).2 rfl⟩
     · rintro ⟨Q, hQ, hg⟩
-      have := hSK _ (hout Q hQ) _ hg
-      simpa using this
+      simpa using hSK _ (hout Q hQ) _ hg
   refine ⟨hfin.toFinset, hout, fun f hf => ?_⟩
   have hconst : ∀ Q ∈ hfin.toFinset, Set.EqOn f (fun _ => f (Quotient.out Q)) (C Q) := by
     intro Q hQ g hg
-    have := hf _ (hout Q hQ) _ hg
-    simpa using this
+    simpa using hf _ (hout Q hQ) _ hg
   have hsplit : ∫ g in ⋃ Q ∈ hfin.toFinset, C Q, f g ∂μ
       = ∑ Q ∈ hfin.toFinset, ∫ g in C Q, f g ∂μ := by
     refine MeasureTheory.integral_biUnion_finset _ (fun Q _ => hmeas Q) ?_ ?_

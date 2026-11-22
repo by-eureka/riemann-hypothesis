@@ -9,8 +9,7 @@ theorem norm_word_le_number_pow : ∀ (T H κ : Type) [AddCommGroup T] [Module �
   have hreal : ∀ (s : ℝ) (x : T), RCLike.re (inner ℂ (Φ x) (Φ ((s : ℂ) • x))) = s * ‖Φ x‖ ^ 2 := by
     intro s x
     rw [map_smul, inner_smul_right, inner_self_eq_norm_sq_to_K]
-    simp [Complex.mul_re]
-    left; rw [← Complex.ofReal_pow, Complex.ofReal_re]
+    simp [← Complex.ofReal_pow, Complex.ofReal_re]
   have hca : ∀ j x, RCLike.re (inner ℂ (Φ x) (Φ (c j (a j x)))) = ‖Φ (a j x)‖ ^ 2 := by
     intro j x
     rw [← inner_conj_symm, hadj, RCLike.conj_re, inner_self_eq_norm_sq]
@@ -41,8 +40,7 @@ theorem norm_word_le_number_pow : ∀ (T H κ : Type) [AddCommGroup T] [Module �
     intro j x
     refine hsq x _ (norm_nonneg _) ?_
     have := Finset.single_le_sum (f := fun i => ‖Φ (a i x)‖ ^ 2) (fun i _ => sq_nonneg _) (Finset.mem_univ j)
-    have : 0 ≤ r * ‖Φ x‖ ^ 2 := mul_nonneg (by linarith) (sq_nonneg _)
-    linarith
+    nlinarith
   have hac : ∀ j, a j * c j = c j * a j + (r' : ℂ) • 1 := fun j => sub_eq_iff_eq_add'.1 (hcomm j)
   have hc : ∀ j x, ‖Φ (c j x)‖ ≤ ‖Φ (M x)‖ := by
     intro j x
@@ -51,8 +49,7 @@ theorem norm_word_le_number_pow : ∀ (T H κ : Type) [AddCommGroup T] [Module �
       rw [← inner_self_eq_norm_sq (𝕜 := ℂ), hadj, ← Module.End.mul_apply, hac, LinearMap.add_apply,
         LinearMap.smul_apply, Module.End.one_apply, Module.End.mul_apply, map_add, inner_add_right, map_add, hca, hreal]
     have := Finset.single_le_sum (f := fun i => ‖Φ (a i x)‖ ^ 2) (fun i _ => sq_nonneg _) (Finset.mem_univ j)
-    have : r' * ‖Φ x‖ ^ 2 ≤ r * ‖Φ x‖ ^ 2 := mul_le_mul_of_nonneg_right hr' (sq_nonneg _)
-    linarith
+    nlinarith [mul_le_mul_of_nonneg_right hr' (sq_nonneg (‖Φ x‖ : ℝ))]
   have hC : ∀ s : ℝ, Commute M (M + (s : ℂ) • 1) := fun s =>
     (Commute.refl M).add_right ((Commute.one_right M).smul_right _)
   have hshift : ∀ (s : ℝ), |s| ≤ r → ∀ y, ‖Φ ((M + (s : ℂ) • 1) y)‖ ≤ 2 * ‖Φ (M y)‖ := by
@@ -76,25 +73,18 @@ theorem norm_word_le_number_pow : ∀ (T H κ : Type) [AddCommGroup T] [Module �
         _ = 2 ^ k * ‖Φ ((M + (s : ℂ) • 1) ((M ^ k) y))‖ := by rw [e]
         _ ≤ 2 ^ k * (2 * ‖Φ (M ((M ^ k) y))‖) := by gcongr; exact hshift s hs _
         _ = 2 ^ (k + 1) * ‖Φ (M ((M ^ k) y))‖ := by ring
-  have hcommx : ∀ (s : ℝ) (k : ℕ) x, M (((M + (s : ℂ) • 1) ^ k) x) = ((M + (s : ℂ) • 1) ^ k) (M x) := by
-    intro s k x
-    have e := LinearMap.congr_fun ((hC s).pow_right k).eq x
-    rw [Module.End.mul_apply, Module.End.mul_apply] at e
-    exact e
+  have hcommx : ∀ (s : ℝ) (k : ℕ) x, M (((M + (s : ℂ) • 1) ^ k) x) = ((M + (s : ℂ) • 1) ^ k) (M x) :=
+    fun s k x => LinearMap.congr_fun ((hC s).pow_right k).eq x
   have hMka : ∀ j (k : ℕ) x, (M ^ k) (a j x) = a j (((M + ((-r : ℝ) : ℂ) • 1) ^ k) x) := by
     intro j k x
     have hs : SemiconjBy (a j) (M + ((-r : ℝ) : ℂ) • 1) M := by
       unfold SemiconjBy; rw [hMa j]; push_cast; rw [neg_smul, ← sub_eq_add_neg]
-    have e := LinearMap.congr_fun (hs.pow_right k).eq x
-    rw [Module.End.mul_apply, Module.End.mul_apply] at e
-    exact e.symm
+    exact (LinearMap.congr_fun (hs.pow_right k).eq x).symm
   have hMkc : ∀ j (k : ℕ) x, (M ^ k) (c j x) = c j (((M + (r : ℂ) • 1) ^ k) x) := by
     intro j k x
     have hs : SemiconjBy (c j) (M + (r : ℂ) • 1) M := by
       unfold SemiconjBy; rw [hMc j]
-    have e := LinearMap.congr_fun (hs.pow_right k).eq x
-    rw [Module.End.mul_apply, Module.End.mul_apply] at e
-    exact e.symm
+    exact (LinearMap.congr_fun (hs.pow_right k).eq x).symm
   have hra : |(-r)| ≤ r := by rw [abs_neg, abs_of_nonneg (by linarith)]
   have hrc : |r| ≤ r := by rw [abs_of_nonneg (by linarith)]
   have hPa : ∀ j (k : ℕ), ∃ C : ℝ, ∀ x, ‖Φ ((M ^ k) (a j x))‖ ≤ C * ‖Φ ((M ^ (k + 1)) x)‖ := by
@@ -159,10 +149,8 @@ theorem norm_word_le_number_pow : ∀ (T H κ : Type) [AddCommGroup T] [Module �
     | zero => simp
     | succ i ih => rw [← add_assoc, pow_succ', Module.End.mul_apply]; exact ih.trans (hx _)
   obtain ⟨C, hC0, h⟩ := hlist l hl 0
-  refine ⟨C, fun x => ?_⟩
-  have h' := h x
-  rw [pow_zero, Module.End.one_apply, zero_add] at h'
   obtain ⟨i, rfl⟩ := Nat.exists_eq_add_of_le hld
-  exact h'.trans (mul_le_mul_of_nonneg_left (hmono x _ i) hC0)
+  refine ⟨C, fun x => (by simpa using h x : ‖Φ (l.prod x)‖ ≤ C * _).trans ?_⟩
+  exact mul_le_mul_of_nonneg_left (hmono x _ i) hC0
 
 end GlobalTheory

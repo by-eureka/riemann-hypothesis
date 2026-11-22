@@ -1,4 +1,4 @@
-import Mathlib
+import Formalism.PeriodIntegrals.UnitaryGroupMassFormula.WeilStabilizerVolume.UnfoldMain
 import Formalism.PeriodIntegrals.UnitaryGroupMassFormula.StabilizerOrbitVolume.Unfold
 
 noncomputable section
@@ -19,33 +19,7 @@ theorem gram_orbit_equiv {a : ℕ} (X0 : Fin a → Fin M → E)
     ∃ e : {X : Fin a → Fin M → E | gramE σ J X = gramE σ J X0} ≃
         orbS (GamA σ J) (ratTup (F := F) (AF F) X0),
       ∀ X, (e X : Fin a → Fin M → AF F ⊗[F] E) = ratTup (F := F) (AF F) (X : Fin a → Fin M → E) := by
-  let f : {X : Fin a → Fin M → E | gramE σ J X = gramE σ J X0} →
-      orbS (GamA σ J) (ratTup (F := F) (AF F) X0) := fun X =>
-    ⟨ratTup (F := F) (AF F) (X : Fin a → Fin M → E), by
-      obtain ⟨g, hg, hgX⟩ := hW X X.2
-      refine ⟨ratElA σ J g hg, ratElA_mem σ J g hg, ?_⟩
-      rw [ratElA_smul]
-      congr 1
-      funext i
-      exact hgX i⟩
-  have hinj : Function.Injective f := fun X X' h =>
-    Subtype.ext (ratTup_injective (congrArg Subtype.val h))
-  have hsurj : Function.Surjective f := by
-    rintro ⟨x, ⟨γ, hγ, rfl⟩⟩
-    obtain ⟨g, hg, hgγ⟩ := Subgroup.mem_map.1
-      (Subgroup.mem_subgroupOf.1 (show (show HR (AF F) σ J from γ) ∈ HFinIn (AF F) σ J from hγ))
-    have hγe : γ = ratElA σ J g hg := Subtype.ext hgγ.symm
-    have hg' : Formalism.UG.cT (σ : E →+* E) (g : Matrix (Fin M) (Fin M) E) * J *
-        (g : Matrix (Fin M) (Fin M) E) = J := hg
-    refine ⟨⟨fun i => (g : Matrix (Fin M) (Fin M) E).mulVec (X0 i), ?_⟩, ?_⟩
-    · show gramE σ J _ = gramE σ J X0
-      ext i j
-      show Formalism.UG.hform (σ : E →+* E) J _ _ = Formalism.UG.hform (σ : E →+* E) J _ _
-      rw [Formalism.UG.P.hform_mulVec, hg']
-    · apply Subtype.ext
-      show ratTup (F := F) (AF F) _ = γ • ratTup (F := F) (AF F) X0
-      rw [hγe, ratElA_smul]
-  exact ⟨Equiv.ofBijective f ⟨hinj, hsurj⟩, fun X => rfl⟩
+  exact PI.VolStabW.gram_orbit_equiv σ J X0 hW
 
 end Main
 

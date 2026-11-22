@@ -9,20 +9,15 @@ theorem exists_unit_norm_of_selfDual_hermitian_lattice :
   have hpK : (p : K) ≠ 0 := by exact_mod_cast hp.ne_zero
   have hpQ : (p : ℚ) ≠ 0 := by exact_mod_cast hp.ne_zero
   have hp1 : (1 : ℚ) < p := by exact_mod_cast hp.one_lt
-  have hθ0 : θ ≠ 0 := by
-    rintro rfl
-    have : (d : K) = 0 := by simpa using hθ
-    exact hd.ne_zero (by exact_mod_cast this)
 
   have hrat : ∀ x : V, ∃ u : ℚ, h x x = (u : K) := by
     intro x
     obtain ⟨a, b, hab⟩ := hK (h x x)
-    have h1 := hherm x x
-    rw [hab, map_add, map_mul, map_ratCast, map_ratCast, hσθ] at h1
-    have h2 : (b : K) * θ = 0 := by
-      have : (2 : K) * ((b : K) * θ) = 0 := by linear_combination h1
-      simpa using this
-    exact ⟨a, by rw [hab, h2, add_zero]⟩
+    have h1 : (b : K) * θ = 0 := by
+      have h2 := hherm x x
+      rw [hab, map_add, map_mul, map_ratCast, map_ratCast, hσθ] at h2
+      linear_combination h2 / 2
+    exact ⟨a, by rw [hab, h1, add_zero]⟩
   have hnp : padicNorm p (p : ℚ) = (p : ℚ)⁻¹ := padicNorm.padicNorm_p_of_prime
   by_contra hcon
   push_neg at hcon
@@ -32,15 +27,13 @@ theorem exists_unit_norm_of_selfDual_hermitian_lattice :
     have h1 : padicNorm p u ≤ 1 := (hO u).1 (hu ▸ hLO y hy y hy)
     have h2 := hcon y hy hyW u hu
     have h3 : ((u / p : ℚ) : K) ∈ O := by
-      rw [hO, padicNorm.div, hnp]
+      rw [hO, padicNorm.div, hnp, div_inv_eq_mul]
       by_cases hu0 : u = 0
       · simp [hu0]
       obtain ⟨z, hz⟩ := padicNorm.values_discrete (p := p) hu0
       rw [hz] at h1 h2 ⊢
-      have hz0 : -z < 0 := by
-        have := lt_of_le_of_ne h1 h2
-        exact (zpow_lt_one_iff_right₀ hp1).1 this
-      rw [div_inv_eq_mul, ← zpow_add_one₀ hpQ]
+      have hz0 : -z < 0 := (zpow_lt_one_iff_right₀ hp1).1 (lt_of_le_of_ne h1 h2)
+      rw [← zpow_add_one₀ hpQ]
       exact zpow_le_one_of_nonpos₀ hp1.le (by omega)
     rw [hu]
     simpa using h3
@@ -49,8 +42,7 @@ theorem exists_unit_norm_of_selfDual_hermitian_lattice :
     have h1 := O.sub_mem (O.sub_mem (hdiv _ (L.add_mem hx hy) (W.add_mem hxW hyW)) (hdiv x hx hxW))
       (hdiv y hy hyW)
     convert h1 using 1
-    simp only [map_add, LinearMap.add_apply]
-    rw [← hherm x y]
+    simp only [map_add, LinearMap.add_apply, ← hherm x y]
     ring
   have hstep : ∀ x ∈ L, x ∈ W → (θ / p) • x ∈ L := by
     intro x hx hxW
@@ -89,9 +81,9 @@ theorem exists_unit_norm_of_selfDual_hermitian_lattice :
       rw [padicNorm.padicNorm_of_prime_of_ne hpd]
       exact inv_le_one_of_one_le₀ hp1.le
   have hc : (p : ℚ) ≤ padicNorm p ((d : ℚ) / (p * p)) := by
-    rw [padicNorm.div, padicNorm.mul, hnp, le_div_iff₀ (by positivity)]
-    calc (p : ℚ) * ((p : ℚ)⁻¹ * (p : ℚ)⁻¹) = (p : ℚ)⁻¹ := by field_simp
-      _ ≤ _ := hnd
+    rw [padicNorm.div, padicNorm.mul, hnp, le_div_iff₀ (by positivity), ← mul_assoc,
+      mul_inv_cancel₀ hpQ, one_mul]
+    exact hnd
   have hpow : ∀ (q : ℚ) (k : ℕ), padicNorm p (q ^ k) = padicNorm p q ^ k := by
     intro q k
     induction k with
@@ -104,15 +96,14 @@ theorem exists_unit_norm_of_selfDual_hermitian_lattice :
       rw [h.map_smul, LinearMap.smul_apply, LinearMap.map_smulₛₗ, hu, smul_eq_mul, smul_eq_mul,
         map_pow, map_div₀, hσθ, map_natCast, ← mul_assoc, ← mul_pow]
       push_cast
-      congr 2
-      field_simp
-      linear_combination -hθ
+      rw [show θ / ↑p * (-θ / ↑p) = (↑d : K) / (↑p * ↑p) by
+        field_simp
+        linear_combination -hθ]
     rw [h2, hO, padicNorm.mul, hpow] at h1
     refine le_trans ?_ h1
     gcongr
   obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (padicNorm p u)⁻¹ hp1
-  have := hbound k
   rw [inv_lt_iff_one_lt_mul₀ hupos] at hk
-  linarith
+  linarith [hbound k]
 
 end GlobalTheory

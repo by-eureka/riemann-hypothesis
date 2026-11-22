@@ -15,13 +15,13 @@ theorem UpperTheory.V.AlgebraTools.powerSeries_equiv_of_complete_dvr :
     intro x y h
     rw [IsHausdorff.eq_iff_smodEq (I := maximalIdeal A)]
     intro n
-    rw [SModEq.sub_mem]
-    simpa [Ideal.smul_eq_mul] using h n
+    simpa [SModEq.sub_mem, Ideal.smul_eq_mul] using h n
   have hm : maximalIdeal A = Ideal.span {t} :=
     (IsDiscreteValuationRing.irreducible_iff_uniformizer t).mp ht
   have htm : t ∈ maximalIdeal A := by
     rw [hm]
     exact Ideal.subset_span rfl
+  have htn : ∀ n : ℕ, t ^ n ∈ maximalIdeal A ^ n := fun n => Ideal.pow_mem_pow htm n
   have hpk : CharP (ResidueField A) p := by
     rw [CharP.charP_iff_prime_eq_zero (Fact.out : p.Prime)]
     rw [← map_natCast (residue A), CharP.cast_eq_zero, map_zero]
@@ -29,10 +29,7 @@ theorem UpperTheory.V.AlgebraTools.powerSeries_equiv_of_complete_dvr :
       Polynomial.eval a (Polynomial.derivative (Polynomial.X ^ n - Polynomial.X : Polynomial A))
         = -1 := by
     intro n a hn
-    rw [Polynomial.derivative_sub, Polynomial.derivative_X_pow, Polynomial.derivative_X]
-    simp only [Polynomial.eval_sub, Polynomial.eval_mul, Polynomial.eval_C,
-      Polynomial.eval_natCast, Polynomial.eval_pow, Polynomial.eval_X, Polynomial.eval_one, hn,
-      zero_mul, zero_sub]
+    simp [Polynomial.derivative_sub, Polynomial.derivative_X_pow, Polynomial.derivative_X, hn]
   obtain ⟨nf, -, hq⟩ := FiniteField.card (ResidueField A) p
   set q := Fintype.card (ResidueField A) with hqdef
   have hq2 : 1 < q := Fintype.one_lt_card
@@ -102,7 +99,7 @@ theorem UpperTheory.V.AlgebraTools.powerSeries_equiv_of_complete_dvr :
     obtain ⟨R, hR⟩ := (Polynomial.X_pow_dvd_iff (f := P - Q) (n := n)).mpr
       (fun d hd => by rw [Polynomial.coeff_sub, h d hd, sub_self])
     rw [hR, Polynomial.eval₂_mul, Polynomial.eval₂_X_pow]
-    exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow htm n)
+    exact Ideal.mul_mem_right _ _ (htn n)
   let g : (n : ℕ) → PowerSeries (ResidueField A) →+* A ⧸ maximalIdeal A ^ n := fun n =>
     { toFun := fun f => Ideal.Quotient.mk (maximalIdeal A ^ n) ((PowerSeries.trunc n f).eval₂ s t)
       map_one' := by
@@ -114,8 +111,8 @@ theorem UpperTheory.V.AlgebraTools.powerSeries_equiv_of_complete_dvr :
         intro i hi
         rw [← PowerSeries.trunc_trunc_mul_trunc, PowerSeries.coeff_trunc, if_pos hi,
           ← Polynomial.coe_mul, Polynomial.coeff_coe]
-      map_zero' := by simp [hev]
-      map_add' := fun f g' => by simp [hev, add_mul, Finset.sum_add_distrib] }
+      map_zero' := by simp
+      map_add' := fun f g' => by simp [hev] }
   have hg : ∀ {m n : ℕ} (hle : m ≤ n),
       (Ideal.Quotient.factorPow (maximalIdeal A) hle).comp (g n) = g m := by
     intro m n hle
@@ -128,28 +125,21 @@ theorem UpperTheory.V.AlgebraTools.powerSeries_equiv_of_complete_dvr :
     intro i hi
     simp [PowerSeries.coeff_trunc, hi, lt_of_lt_of_le hi hle]
   let e0 := IsAdicComplete.liftRingHom (maximalIdeal A) g hg
-  have hme : ∀ n f, Ideal.Quotient.mk (maximalIdeal A ^ n) (e0 f) = g n f :=
-    fun n f => IsAdicComplete.mk_liftRingHom (maximalIdeal A) g hg n f
   have hEq : ∀ n f, e0 f - (PowerSeries.trunc n f).eval₂ s t ∈ maximalIdeal A ^ n :=
-    fun n f => Ideal.Quotient.eq.mp (hme n f)
+    fun n f => Ideal.Quotient.eq.mp (IsAdicComplete.mk_liftRingHom (maximalIdeal A) g hg n f)
   have hres : ∀ f, residue A (e0 f) = PowerSeries.constantCoeff f := by
     intro f
     have h1 := hEq 1 f
     rw [pow_one, hev, Finset.sum_range_one, pow_zero, mul_one] at h1
-    have h2 : residue A (e0 f) = residue A (s (PowerSeries.coeff 0 f)) :=
-      Ideal.Quotient.eq.mpr h1
-    rw [h2, hsr', PowerSeries.coeff_zero_eq_constantCoeff_apply]
+    rw [show residue A (e0 f) = residue A (s (PowerSeries.coeff 0 f)) from
+      Ideal.Quotient.eq.mpr h1, hsr', PowerSeries.coeff_zero_eq_constantCoeff_apply]
   have hmono : ∀ x : A, (∀ n, x ∈ maximalIdeal A ^ (n + 2)) → ∀ n, x ∈ maximalIdeal A ^ n :=
     fun x h n => Ideal.pow_le_pow_right (by omega) (h n)
   have hX : e0 PowerSeries.X = t := by
     apply hH
     apply hmono
     intro n
-    have h1 := hEq (n + 2) PowerSeries.X
-    have h2 : (PowerSeries.trunc (n + 2) PowerSeries.X).eval₂ s t = t := by
-      rw [hev, Finset.sum_range_succ', Finset.sum_range_succ']
-      simp [PowerSeries.coeff_X]
-    rwa [h2] at h1
+    simpa [hev, PowerSeries.coeff_X, Finset.sum_range_succ] using hEq (n + 2) PowerSeries.X
   have hinj : Function.Injective e0 := by
     rw [injective_iff_map_eq_zero]
     intro f hf
@@ -172,7 +162,7 @@ theorem UpperTheory.V.AlgebraTools.powerSeries_equiv_of_complete_dvr :
     have hc : ∀ n, x = (PowerSeries.trunc n F).eval₂ s t + t ^ n * δ^[n] x := by
       intro n
       induction n with
-      | zero => simp [hev]
+      | zero => simp
       | succ n ih =>
         rw [hev, Finset.sum_range_succ, ← hev, Function.iterate_succ_apply']
         have hcn : PowerSeries.coeff n F = residue A (δ^[n] x) := PowerSeries.coeff_mk _ _
@@ -183,7 +173,7 @@ theorem UpperTheory.V.AlgebraTools.powerSeries_equiv_of_complete_dvr :
     have h2 : e0 F - x = (e0 F - (PowerSeries.trunc n F).eval₂ s t) - t ^ n * δ^[n] x := by
       linear_combination -(hc n)
     rw [h2]
-    exact Ideal.sub_mem _ h1 (Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow htm n))
+    exact Ideal.sub_mem _ h1 (Ideal.mul_mem_right _ _ (htn n))
   refine ⟨RingEquiv.ofBijective e0 ⟨hinj, hsurj⟩, hX, fun c => ?_⟩
   show residue A (e0 (PowerSeries.C c)) = c
   rw [hres, PowerSeries.constantCoeff_C]

@@ -1,4 +1,4 @@
-import Mathlib
+import Formalism.PeriodIntegrals.UnitaryGroupMassFormula.WeilStabilizerVolume.LocDensFFT
 import Formalism.PeriodIntegrals.UnitaryGroupMassFormula.StabilizerOrbitVolume.LocDensFFS
 
 noncomputable section
@@ -9,26 +9,8 @@ namespace FiniteFieldCounting
 
 theorem prod_bound {ι : Type} (δ : ι → ℝ) (t : ℝ) (ht0 : 0 ≤ t) (ht1 : t ≤ 1)
     (h : ∀ j, |δ j| ≤ t) (s : Finset ι) :
-    |∏ j ∈ s, (1 + δ j) - 1| ≤ t * (2 ^ s.card - 1) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert j s hj ih =>
-    rw [Finset.prod_insert hj, Finset.card_insert_of_notMem hj]
-    set P := ∏ j ∈ s, (1 + δ j)
-    have hP : |P| ≤ 1 + |P - 1| := by
-      have := abs_sub_abs_le_abs_sub P 1
-      rw [abs_one] at this
-      linarith
-    have e : (1 + δ j) * P - 1 = (P - 1) + δ j * P := by ring
-    rw [e]
-    have h1 := abs_add_le (P - 1) (δ j * P)
-    rw [abs_mul] at h1
-    have hpow : (2 : ℝ) ^ (s.card + 1) = 2 * 2 ^ s.card := by ring
-    rw [hpow]
-    have h2 : |δ j| * |P| ≤ t * (1 + |P - 1|) := mul_le_mul (h j) hP (abs_nonneg _) ht0
-    have h3 : 0 ≤ |P - 1| := abs_nonneg _
-    nlinarith [mul_nonneg (sub_nonneg.mpr ht1) h3]
+    |∏ j ∈ s, (1 + δ j) - 1| ≤ t * (2 ^ s.card - 1) :=
+  PI.VolStabW.FiniteFieldCounting.prod_bound δ t ht0 ht1 h s
 
 theorem ratio_bound (M a : ℕ) (ha : a ≤ M) (q : ℝ) (hq : 1 ≤ q) (δ : Fin a → ℝ)
     (h : ∀ j, |δ j| ≤ (q⁻¹) ^ 2) : |∏ j, (1 + δ j) - 1| ≤ 2 ^ M * (q⁻¹) ^ 2 := by
@@ -128,68 +110,12 @@ theorem card_transport {k K : Type} [Field k] [CommRing K] [Algebra k K] (σ : K
     (J : Matrix (Fin M) (Fin M) K) (T : Matrix (Fin a) (Fin a) K) :
     Nat.card {X : Fin a → Fin M → K // ffGram (σ : K →+* K) J X = T} =
       Nat.card {Y : Fin a → Fin M → k × k //
-        ffGram (FiniteFieldSplitting.swapR k) (J.map e) Y = T.map e} := by
-  apply Nat.card_congr
-  refine Equiv.subtypeEquiv (p := fun X ↦ ffGram (σ : K →+* K) J X = T)
-    (q := fun Y ↦ ffGram (FiniteFieldSplitting.swapR k) (J.map e) Y = T.map e)
-    { toFun := fun X r i ↦ e (X r i)
-      invFun := fun Y r i ↦ e.symm (Y r i)
-      left_inv := fun X ↦ by
-        funext r i
-        simp
-      right_inv := fun Y ↦ by
-        funext r i
-        simp } ?_
-  intro X
-  have key : ∀ r s, ffGram (FiniteFieldSplitting.swapR k) (J.map e) (fun r i ↦ e (X r i)) r s =
-      e (ffGram (σ : K →+* K) J X r s) := by
-    intro r s
-    simp only [ffGram, ffH, map_sum, map_mul, Matrix.map_apply, swapR_apply, ← he]
-    rfl
-  constructor
-  · intro h
-    funext r s
-    change ffGram (FiniteFieldSplitting.swapR k) (J.map e) (fun r i ↦ e (X r i)) r s = _
-    rw [key, h]
-    rfl
-  · intro h
-    funext r s
-    apply e.injective
-    rw [← key]
-    exact congrFun (congrFun h r) s
+        ffGram (FiniteFieldSplitting.swapR k) (J.map e) Y = T.map e} :=
+  PI.VolStabW.FiniteFieldCounting.card_transport σ e he J T
 
 end FiniteFieldCounting
 
-theorem fFCount_of (hS : FFSplit) (hI : FFInert) : FFCount := by
-  intro M
-  refine ⟨2 ^ M, ?_⟩
-  intro k K _ _ _ _ σ hσ h2 J hJ hJd a ha T hT hTd
-  have hq1 : (1 : ℝ) ≤ (Nat.card k : ℝ) := by exact_mod_cast Nat.card_pos (α := k)
-  have hq0 : (Nat.card k : ℝ) ≠ 0 := by positivity
-  rcases hσ.2 with ⟨hK, hdeg, hne⟩ | ⟨e, he⟩
-  · letI : Field K := hK.toField
-    rw [hI k K σ hσ.1 hdeg hne h2 M a (by omega) J hJ hJd T hT hTd,
-      FiniteFieldCounting.inert_ratio M a (by omega) _ hq0]
-    exact FiniteFieldCounting.ratio_bound M a (by omega) _ hq1 _
-      (FiniteFieldCounting.inert_delta M a ha _ hq1)
-  · have hJ' : ∀ i j, ((J.map e) j i).swap = (J.map e) i j := by
-      intro i j
-      simp only [Matrix.map_apply, ← he, hJ]
-    have hT' : ∀ i j, ((T.map e) j i).swap = (T.map e) i j := by
-      intro i j
-      simp only [Matrix.map_apply, ← he, hT]
-    have hJd' : IsUnit (J.map e).det := by
-      have hd : e J.det = (J.map e).det := (e : K →+* k × k).map_det J
-      rw [← hd]
-      exact hJd.map e
-    have hTd' : IsUnit (T.map e).det := by
-      have hd : e T.det = (T.map e).det := (e : K →+* k × k).map_det T
-      rw [← hd]
-      exact hTd.map e
-    rw [FiniteFieldCounting.card_transport σ e he J T, hS k M a (by omega) _ hJ' hJd' _ hT' hTd',
-      FiniteFieldCounting.split_ratio M a (by omega) _ hq0]
-    exact FiniteFieldCounting.ratio_bound M a (by omega) _ hq1 _
-      (FiniteFieldCounting.split_delta M a ha _ hq1)
+theorem fFCount_of (hS : FFSplit) (hI : FFInert) : FFCount := PI.VolStabW.fFCount_of hS hI
 
 theorem fFCount_of_inert (hI : FFInert) : FFCount := fFCount_of fFSplit_holds hI
 
