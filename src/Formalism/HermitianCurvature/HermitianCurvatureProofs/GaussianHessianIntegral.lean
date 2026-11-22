@@ -1,3 +1,4 @@
+import Formalism.HermitianCurvature.HermitianCurvatureProofs.UnitaryInvariantGaussian
 import Formalism.HermitianCurvature.StatementG
 
 section Factorisation
@@ -399,27 +400,8 @@ theorem gaussInt_eq (d : ℕ) (β t : ℂ) (hβ : β ≠ 0) (W : Matrix (Fin d) 
   · simp [ht]
   · field_simp
 
-theorem gaussOne_of_damped (h : GaussOneDamped) : GaussOne := by
-  intro β a hβ ha
-  have h1 : ∀ᶠ δ in 𝓝[>] (0:ℝ), ((‖β‖ / Real.sqrt (4 * δ ^ 2 + ‖β‖ ^ 2 * ‖a‖ ^ 2) : ℝ) : ℂ) =
-      ∫ w : ℂ, ((Real.exp (-δ * ‖w‖ ^ 2) : ℝ) : ℂ) * psi β (a * w ^ 2 / 2) ∂(mu β) := by
-    filter_upwards [self_mem_nhdsWithin] with δ hδ using (h β a δ hδ).symm
-  refine Filter.Tendsto.congr' h1 ?_
-  have hb : 0 < ‖β‖ := norm_pos_iff.2 hβ
-  have hab : 0 < ‖a‖ := norm_pos_iff.2 ha
-  have hc : ContinuousAt (fun δ:ℝ => ‖β‖ / Real.sqrt (4 * δ ^ 2 + ‖β‖ ^ 2 * ‖a‖ ^ 2)) 0 := by
-    apply ContinuousAt.div continuousAt_const (by fun_prop)
-    have : 0 < 4 * (0:ℝ) ^ 2 + ‖β‖ ^ 2 * ‖a‖ ^ 2 := by positivity
-    exact (Real.sqrt_pos.2 this).ne'
-  have h2 := (Complex.continuous_ofReal.continuousAt.comp hc).tendsto.mono_left
-    (nhdsWithin_le_nhds (s := Set.Ioi (0:ℝ)))
-  convert h2 using 2
-  simp only [Function.comp]
-  congr 1
-  have : 4 * (0:ℝ) ^ 2 + ‖β‖ ^ 2 * ‖a‖ ^ 2 = (‖β‖ * ‖a‖) ^ 2 := by ring
-  show ‖a‖⁻¹ = ‖β‖ / Real.sqrt (4 * (0:ℝ) ^ 2 + ‖β‖ ^ 2 * ‖a‖ ^ 2)
-  rw [this, Real.sqrt_sq (by positivity)]
-  field_simp
+theorem gaussOne_of_damped (h : GaussOneDamped) : GaussOne :=
+  G8.gaussOne_of_damped h
 
 theorem gaussMulti_of (hT : Takagi) (hG : GaussOneDamped) : GaussMulti := by
   intro d β t H hβ ht hH hdet
@@ -462,26 +444,8 @@ theorem hessDet : HessDet := by
   simp [dotProduct]
   ring
 
-theorem gaussHessOfMulti : GaussHessOfMulti := by
-  intro hG hD m β t z hβ ht hz
-  have hdet : (z⁻¹ • (1 + Matrix.of fun _ _ => (1 : ℂ)) : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ).det ≠ 0 := by
-    rw [hD m z]
-    have : ((m:ℂ)+2) ≠ 0 := by
-      have : ((m:ℂ)+2) = ((m+2 : ℕ) : ℂ) := by push_cast; ring
-      rw [this]; exact_mod_cast (Nat.succ_ne_zero (m+1))
-    exact mul_ne_zero this (pow_ne_zero _ (inv_ne_zero hz))
-  have hs : (z⁻¹ • (1 + Matrix.of fun _ _ => (1 : ℂ)) : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ).IsSymm := by
-    ext i j; simp [Matrix.transpose_apply, Matrix.one_apply, eq_comm, mul_add]
-  have h := hG (m+1) β t _ hβ ht hs hdet
-  rw [hD m z] at h
-  convert h using 3
-  have h2 : ‖(m:ℂ)+2‖ = (m:ℝ)+2 := by
-    have : ((m:ℂ)+2) = (((m:ℝ)+2 : ℝ):ℂ) := by push_cast; ring
-    rw [this, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-  rw [norm_mul, norm_pow, norm_inv, h2]
-  have : 0 < ‖z‖ := norm_pos_iff.2 hz
-  field_simp
-  rw [← mul_pow]; simp [this.ne']
+theorem gaussHessOfMulti : GaussHessOfMulti :=
+  G8.gaussHessOfMulti
 
 end Formalism.FourierDecayAlt.P.G9
 

@@ -207,25 +207,21 @@ theorem testNear_holds : TestNear := by
     ⋂ x, ⋂ i, ⋂ k, (fun g : HA (AF F) σ J =>
       crd b (Af F) (projFin (g • ratTup (AF F) X0) x i) k) ⁻¹' ReciprocityTheory.GeneralLinearIntegers.GeneralLinearIntegersOpenCompact.Oint F
   have horb := continuous_orbit σ J (ratTup (AF F) X0)
+  have hpf : Continuous fun g : HA (AF F) σ J => projFin (g • ratTup (AF F) X0) :=
+    (continuous_projFin b).comp horb
   refine ⟨φ, hφ0, hadm, U, ?_, ⟨1, ?_⟩, ?_⟩
   · refine (isOpen_lt continuous_const
       (fi.continuous.comp ((continuous_projInf b).comp horb))).inter ?_
     refine isOpen_iInter_of_finite fun x => isOpen_iInter_of_finite fun i =>
       isOpen_iInter_of_finite fun k => ReciprocityTheory.GeneralLinearIntegers.GeneralLinearIntegersOpenCompact.isOpen_Oint.preimage ?_
-    have hpf : Continuous fun g : HA (AF F) σ J => projFin (g • ratTup (AF F) X0) :=
-      (continuous_projFin b).comp horb
     exact (continuous_crd b (Af F) k).comp ((continuous_apply i).comp ((continuous_apply x).comp hpf))
   · refine ⟨?_, ?_⟩
-    · show 0 < fi (projInf ((1 : HA (AF F) σ J) • ratTup (AF F) X0))
-      rw [one_smul]
-      exact lt_of_le_of_ne (hf0 _) (Ne.symm hfx)
+    · simpa using lt_of_le_of_ne (hf0 _) (Ne.symm hfx)
     · simp only [Set.mem_iInter, Set.mem_preimage, one_smul]
       intro x i k
       obtain ⟨m, hm⟩ := hb x i k
-      have e : crd b (Af F) (projFin (ratTup (AF F) X0) x i) k = algebraMap F (Af F) (m : F) := by
-        simp only [projFin, ratTup, crd_map, crd_incl, AlgHom.commutes, hm]
-      rw [e]
-      exact ReciprocityTheory.GeneralLinearIntegers.GeneralLinearIntegersOpenCompact.algebraMap_int_mem_Oint m
+      simpa only [projFin, ratTup, crd_map, crd_incl, AlgHom.commutes, hm] using
+        ReciprocityTheory.GeneralLinearIntegers.GeneralLinearIntegersOpenCompact.algebraMap_int_mem_Oint m
   · rintro g ⟨h1, h2⟩
     simp only [Set.mem_iInter, Set.mem_preimage] at h2
     have hone : ∀ v, ind v (projV v (projFin (g • ratTup (AF F) X0))) = 1 := by
@@ -239,9 +235,6 @@ theorem testNear_holds : TestNear := by
         rfl
       rw [e]
       exact h2 x i k v
-    show 0 < fi (projInf (g • ratTup (AF F) X0)) *
-      ∏ᶠ v, ind v (projV v (projFin (g • ratTup (AF F) X0)))
-    simp only [hone, finprod_one, mul_one]
-    exact h1
+    simpa only [φ, hone, finprod_one, mul_one, Set.mem_ofPred_eq] using h1
 
 end PI.VolStabSW

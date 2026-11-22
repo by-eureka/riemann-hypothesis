@@ -1,3 +1,4 @@
+import Formalism.GammaFactorNonvanishing.RhOfRight
 import Formalism.ZetaRealNonvanish
 
 open Complex
@@ -42,20 +43,7 @@ lemma zeta_neg_odd_ne_zero (m : ℕ) : riemannZeta (-((2 * m + 1 : ℕ) : ℂ)) 
     exact pow_ne_zero _ (by norm_num)
 
 theorem riemannHypothesis_of_zero_free_halfPlane : RHofHalfPlane := by
-  intro h s hs htriv hs1
-  by_contra hne
-  rcases lt_or_gt_of_ne hne with hlt | hgt
-  · by_cases hn : ∃ n : ℕ, s = -n
-    · obtain ⟨n, rfl⟩ := hn
-      obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n
-      · rcases k with _ | m
-        · simp [riemannZeta_zero] at hs
-        · exact htriv ⟨m, by push_cast; ring⟩
-      · exact zeta_neg_odd_ne_zero k hs
-    · simp only [not_exists] at hn
-      have hfe := riemannZeta_one_sub hn hs1
-      rw [hs, mul_zero] at hfe
-      exact h (1 - s) (by simp; linarith) hfe
-  · exact h s hgt hs
+  intro h
+  exact VW.rh_of_right fun s hs _ => h s hs
 
 end Formalism

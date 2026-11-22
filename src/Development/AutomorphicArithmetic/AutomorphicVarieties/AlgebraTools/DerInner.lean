@@ -45,36 +45,26 @@ theorem UpperTheory.V.AlgebraTools.der_inner :
     intro t p q
     have h1 : j (u t p q) * a = j (u t p (i0 t)) * D (u t (i0 t) q) := by
       simp only [a, Finset.mul_sum, ← mul_assoc, ← map_mul]
-      rw [Finset.sum_eq_single t]
-      · rw [Finset.sum_eq_single q]
+      rw [Finset.sum_eq_single_of_mem t (Finset.mem_univ t)]
+      · rw [Finset.sum_eq_single_of_mem q (Finset.mem_univ q)]
         · rw [hsame, if_pos rfl]
         · intro k _ hk
           rw [hsame, if_neg (Ne.symm hk), map_zero, zero_mul]
-        · intro h
-          exact absurd (Finset.mem_univ _) h
       · intro s _ hs
         refine Finset.sum_eq_zero fun k _ => ?_
         rw [hne t s _ _ _ _ (Ne.symm hs), map_zero, zero_mul]
-      · intro h
-        exact absurd (Finset.mem_univ _) h
     have hS1 : ∑ s, ∑ k, j (u s k (i0 s)) * D (u s (i0 s) k * u t p q)
         = j (u t p (i0 t)) * D (u t (i0 t) q) := by
-      rw [Finset.sum_eq_single t]
-      · rw [Finset.sum_eq_single p]
+      rw [Finset.sum_eq_single_of_mem t (Finset.mem_univ t)]
+      · rw [Finset.sum_eq_single_of_mem p (Finset.mem_univ p)]
         · rw [hsame, if_pos rfl]
         · intro k _ hk
           rw [hsame, if_neg hk, map_zero, mul_zero]
-        · intro h
-          exact absurd (Finset.mem_univ _) h
       · intro s _ hs
         refine Finset.sum_eq_zero fun k _ => ?_
         rw [hne s t _ _ _ _ hs, map_zero, mul_zero]
-      · intro h
-        exact absurd (Finset.mem_univ _) h
     have hS2 : ∑ s, ∑ k, j (u s k (i0 s)) * j (u s (i0 s) k) = 1 := by
-      simp only [← map_mul, hsame, eq_self_iff_true, if_true]
-      simp only [← map_sum]
-      rw [hone, map_one]
+      simp only [← map_mul, hsame, ite_true, ← map_sum, hone, map_one]
     have e : a * j (u t p q) = ∑ s, ∑ k, (j (u s k (i0 s)) * D (u s (i0 s) k * u t p q)
         - j (u s k (i0 s)) * j (u s (i0 s) k) * D (u t p q)) := by
       simp only [a, Finset.sum_mul]

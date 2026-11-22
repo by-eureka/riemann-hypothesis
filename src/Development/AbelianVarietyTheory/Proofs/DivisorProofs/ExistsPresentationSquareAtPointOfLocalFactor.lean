@@ -24,10 +24,8 @@ theorem sqloc_present : ∀ (k A : Type) [CommRing k] [CommRing A] [Algebra k A]
     rcases i with i | j
     · simp [hΨ, hκdef, hy]
     · simp [hΨ, hκdef, hh]
-  have hκF : ∀ F, Ideal.Quotient.mk (Ideal.span {1 - e}) (Ψ F) = φ (κ F) := by
-    intro F
-    have := congrArg (fun f => f F) hκ
-    simpa using this
+  have hκF : ∀ F, Ideal.Quotient.mk (Ideal.span {1 - e}) (Ψ F) = φ (κ F) := fun F => by
+    simpa using congrArg (fun f => f F) hκ
   let G : Fin s ⊕ Fin r → MvPolynomial (Fin s ⊕ Fin r) k :=
     Sum.elim (fun i => MvPolynomial.rename Sum.inl (g' i))
       (fun j => MvPolynomial.X (Sum.inr j) - MvPolynomial.rename Sum.inl (h j))
@@ -69,8 +67,7 @@ theorem sqloc_present : ∀ (k A : Type) [CommRing k] [CommRing A] [Algebra k A]
       · simp only [AlgHom.comp_apply, hκdef, MvPolynomial.aeval_X, Sum.elim_inl,
           MvPolynomial.rename_X]
       · simp only [AlgHom.comp_apply, hκX, Ideal.Quotient.mkₐ_eq_mk]
-        rw [Ideal.Quotient.eq]
-        rw [← neg_sub, neg_mem_iff]
+        rw [Ideal.Quotient.eq, ← neg_sub, neg_mem_iff]
         exact Ideal.subset_span ⟨Sum.inr j, rfl⟩
     have h1 : F - MvPolynomial.rename Sum.inl (κ F) ∈ Ideal.span (Set.range G) := by
       have := congrArg (fun f => f F) hq
@@ -90,14 +87,11 @@ theorem sqloc_present : ∀ (k A : Type) [CommRing k] [CommRing A] [Algebra k A]
   have hsplit : F = u * F + (1 - u) * F := by ring
   rw [hsplit]
   refine Submodule.add_mem_sup ?_ ?_
-  · obtain ⟨c, hc⟩ := (Ideal.mem_span_range_iff_exists_fun).mp hFG
-    refine (Ideal.mem_span_range_iff_exists_fun).mpr ⟨c, ?_⟩
-    rw [← hc, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    ring
-  · apply Ideal.mul_mem_mul
-    · rw [RingHom.mem_ker]
-      simp [hu, he]
-    · exact hF
+  · have h := Ideal.mul_mem_mul (Ideal.mem_span_singleton_self u) hFG
+    rw [Ideal.span_mul_span, Set.singleton_mul, ← Set.range_comp] at h
+    exact h
+  · refine Ideal.mul_mem_mul ?_ hF
+    rw [RingHom.mem_ker]
+    simp [hu, he]
 
 end GlobalTheory

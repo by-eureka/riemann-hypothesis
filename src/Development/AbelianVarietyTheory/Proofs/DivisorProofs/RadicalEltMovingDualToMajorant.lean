@@ -22,25 +22,26 @@ theorem radical_elt_moving_dual_to_majorant (n p : ℕ) (J θ : Matrix (Fin n) (
     intro a b hab
     have := congrArg (fun v => (Y₂ᴴ * J).mulVec v) hab
     simpa [Matrix.mulVec_mulVec, hYX] using this
-  have hP : (X₂ᴴ * (J * θ) * X₂).PosDef := hQ.conjTranspose_mul_mul_same hinj
-  obtain ⟨P, hPdef⟩ : ∃ P, P = X₂ᴴ * (J * θ) * X₂ := ⟨_, rfl⟩
-  rw [← hPdef] at hP ⊢
+  have tXX : ∀ {m : Type} (B : Matrix (Fin p) m ℂ), X₂ᴴ * (J * (X₂ * B)) = 0 := by
+    intro m B
+    rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hXX, Matrix.zero_mul]
+  set P := X₂ᴴ * (J * θ) * X₂ with hPdef
+  have hP : P.PosDef := hQ.conjTranspose_mul_mul_same hinj
   have hdet : IsUnit P.det := isUnit_iff_ne_zero.mpr hP.det_pos.ne'
   have hPPi : P * P⁻¹ = 1 := Matrix.mul_nonsing_inv P hdet
   have hPiP : P⁻¹ * P = 1 := Matrix.nonsing_inv_mul P hdet
   have hPiH : (P⁻¹)ᴴ = P⁻¹ := by rw [conjTranspose_nonsing_inv, hP.isHermitian.eq]
-  obtain ⟨Y', hY'⟩ : ∃ Y', Y' = θ * X₂ * P⁻¹ := ⟨_, rfl⟩
+  set Y' := θ * X₂ * P⁻¹ with hY'
   have hXY' : X₂ᴴ * J * Y' = 1 := by
-    rw [← hPPi, hY', hPdef]; simp only [Matrix.mul_assoc]
+    rw [← hPPi, hY', hPdef]
+    simp only [Matrix.mul_assoc]
   have hY'Y' : Y'ᴴ * J * Y' = 0 := by
     have h1 : ∀ B : Matrix (Fin n) (Fin p) ℂ, θᴴ * (J * (θ * B)) = J * B := by
       intro B
       rw [← Matrix.mul_assoc, hθJ, Matrix.mul_assoc, ← Matrix.mul_assoc θ, hθ, Matrix.one_mul]
-    have h2 : X₂ᴴ * (J * (X₂ * P⁻¹)) = 0 := by
-      rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hXX, Matrix.zero_mul]
     rw [hY']
-    simp only [conjTranspose_mul, hPiH, Matrix.mul_assoc, h1, h2, Matrix.mul_zero]
-  obtain ⟨D, hD⟩ : ∃ D, D = Y' - Y₂ := ⟨_, rfl⟩
+    simp only [conjTranspose_mul, hPiH, Matrix.mul_assoc, h1, tXX, Matrix.mul_zero]
+  set D := Y' - Y₂ with hD
   have hXD : X₂ᴴ * J * D = 0 := by rw [hD, Matrix.mul_sub, hXY', hXY, sub_self]
   have hDX : Dᴴ * J * X₂ = 0 := by
     have := congrArg conjTranspose hXD
@@ -51,31 +52,26 @@ theorem radical_elt_moving_dual_to_majorant (n p : ℕ) (J θ : Matrix (Fin n) (
     rw [hY'Y', hYY]
     abel
 
-  have tXX : ∀ {m : Type} (B : Matrix (Fin p) m ℂ), X₂ᴴ * (J * (X₂ * B)) = 0 := by
-    intro m B; rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hXX, Matrix.zero_mul]
   have tXD : ∀ {m : Type} (B : Matrix (Fin p) m ℂ), X₂ᴴ * (J * (D * B)) = 0 := by
-    intro m B; rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hXD, Matrix.zero_mul]
+    intro m B
+    rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hXD, Matrix.zero_mul]
   have tDX : ∀ {m : Type} (B : Matrix (Fin p) m ℂ), Dᴴ * (J * (X₂ * B)) = 0 := by
-    intro m B; rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hDX, Matrix.zero_mul]
-  have tXY : ∀ {m : Type} (B : Matrix (Fin p) m ℂ), X₂ᴴ * (J * (Y₂ * B)) = B := by
-    intro m B; rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hXY, Matrix.one_mul]
+    intro m B
+    rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hDX, Matrix.zero_mul]
   have hXX' : X₂ᴴ * (J * X₂) = 0 := by rw [← Matrix.mul_assoc, hXX]
-  have hXD' : X₂ᴴ * (J * D) = 0 := by rw [← Matrix.mul_assoc, hXD]
   have hDX' : Dᴴ * (J * X₂) = 0 := by rw [← Matrix.mul_assoc, hDX]
   have hXY'' : X₂ᴴ * (J * Y₂) = 1 := by rw [← Matrix.mul_assoc, hXY]
-  obtain ⟨E, hE⟩ : ∃ E, E = Dᴴ * J * Y₂ := ⟨_, rfl⟩
-  have hE' : Dᴴ * (J * Y₂) = E := by rw [hE, Matrix.mul_assoc]
-  obtain ⟨u, hu⟩ : ∃ u : Matrix (Fin n) (Fin n) ℂ,
-      u = 1 + (D * X₂ᴴ * J - X₂ * Dᴴ * J + X₂ * E * X₂ᴴ * J) := ⟨_, rfl⟩
+  set u : Matrix (Fin n) (Fin n) ℂ :=
+    1 + (D * X₂ᴴ * J - X₂ * Dᴴ * J + X₂ * (Dᴴ * J * Y₂) * X₂ᴴ * J) with hu
   have huJ : uᴴ * J * u = J := by
     have hexp : uᴴ * J * u = J + J * X₂ * (Dᴴ * J * D + Dᴴ * J * Y₂ + Y₂ᴴ * J * D) * X₂ᴴ * J := by
-      rw [hu, hE]
+      rw [hu]
       simp only [conjTranspose_add, conjTranspose_sub, conjTranspose_mul, conjTranspose_one,
         conjTranspose_conjTranspose, hJ, Matrix.mul_add, Matrix.add_mul, Matrix.mul_sub,
         Matrix.sub_mul, Matrix.mul_assoc, Matrix.one_mul, Matrix.mul_one, tXX, tXD, tDX,
-        hXX', hXD', hDX', Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add, sub_zero, zero_sub]
+        Matrix.mul_zero, add_zero]
       abel
-    rw [hexp, hkey]; simp
+    simp [hexp, hkey]
   have huX : u * X₂ = X₂ := by
     rw [hu]
     simp only [Matrix.add_mul, Matrix.sub_mul, Matrix.mul_assoc, Matrix.one_mul, hXX', hDX',
@@ -83,24 +79,20 @@ theorem radical_elt_moving_dual_to_majorant (n p : ℕ) (J θ : Matrix (Fin n) (
   have huY : u * Y₂ = Y' := by
     rw [hu]
     simp only [Matrix.add_mul, Matrix.sub_mul, Matrix.mul_assoc, Matrix.one_mul, hXY'',
-      Matrix.mul_one, hE']
+      Matrix.mul_one]
     rw [hD]; abel
-  have hdetJ : J.det ≠ 0 := by
+  have hdetJ : J.det ≠ 0 := fun h0 => hQ.det_pos.ne' (by rw [Matrix.det_mul, h0, zero_mul])
+  have huU : IsUnit u := by
+    rw [Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero]
     intro h0
-    have := hQ.det_pos
-    rw [Matrix.det_mul, h0, zero_mul] at this
-    exact lt_irrefl _ this
-  have hudet : IsUnit u.det := by
-    refine isUnit_iff_ne_zero.mpr fun h0 => hdetJ ?_
     have := congrArg Matrix.det huJ
     rw [Matrix.det_mul, Matrix.det_mul, h0, mul_zero] at this
-    exact this.symm
-  have huU : IsUnit u := (Matrix.isUnit_iff_isUnit_det u).mpr hudet
+    exact hdetJ this.symm
   refine ⟨huU.unit, ?_, ?_, ?_, ?_⟩
   · simpa using huJ
   · simpa using huX
   · intro v hv
-    have hv' : X₂ᴴ *ᵥ (J *ᵥ v) = 0 := by rw [Matrix.mulVec_mulVec]; exact hv
+    have hv' : X₂ᴴ *ᵥ (J *ᵥ v) = 0 := by rw [Matrix.mulVec_mulVec, hv]
     refine ⟨-(Dᴴ *ᵥ (J *ᵥ v)), ?_⟩
     simp only [IsUnit.unit_spec, hu, Matrix.add_mulVec, Matrix.sub_mulVec, Matrix.one_mulVec,
       ← Matrix.mulVec_mulVec, hv', Matrix.mulVec_zero, Matrix.mulVec_neg]

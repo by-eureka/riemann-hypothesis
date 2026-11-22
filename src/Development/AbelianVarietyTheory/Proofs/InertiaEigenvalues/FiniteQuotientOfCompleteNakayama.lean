@@ -15,12 +15,9 @@ theorem finite_quotient_of_complete_nakayama : ∀ {R : Type} [CommRing R] (ϖ :
     | zero => simp
     | succ n ih =>
       refine ih.trans ?_
-      rw [Finset.sum_range_succ, Function.iterate_succ_apply']
-      simp only [Finset.sum_range_succ]
-      set e := C^[n] c with he
-      conv_lhs => rw [hACX e]
-      simp only [add_smul, Finset.sum_add_distrib, smul_add, map_add, map_smul, Finset.smul_sum,
-        mul_smul, pow_succ]
+      rw [hACX (C^[n] c), Function.iterate_succ_apply']
+      simp only [Finset.sum_range_succ, add_smul, Finset.sum_add_distrib, smul_add, map_add,
+        map_smul, Finset.smul_sum, mul_smul, pow_succ]
       abel
   have hfin : ∀ c : Z, c - (∑ i ∈ s, limR (fun j => A (C^[j] c) i) • i
       + d (limT (fun j => X (C^[j] c)))) = 0 := by
@@ -31,9 +28,7 @@ theorem finite_quotient_of_complete_nakayama : ∀ {R : Type} [CommRing R] (ϖ :
     choose b hb using fun i => hlimR (fun j => A (C^[j] c) i) n
     obtain ⟨z, hz⟩ := hlimT (fun j => X (C^[j] c)) n
     refine ⟨C^[n] c - ∑ i ∈ s, b i • i - d z, ?_⟩
-    have hα : ∀ i, limR (fun j => A (C^[j] c) i)
-        = (∑ j ∈ Finset.range n, ϖ ^ j * A (C^[j] c) i) + ϖ ^ n * b i :=
-      fun i => sub_eq_iff_eq_add'.mp (hb i)
+    have hα := fun i => sub_eq_iff_eq_add'.mp (hb i)
     have hY := sub_eq_iff_eq_add'.mp hz
     simp only [hα, hY]
     rw [sub_eq_iff_eq_add]
@@ -41,10 +36,8 @@ theorem finite_quotient_of_complete_nakayama : ∀ {R : Type} [CommRing R] (ϖ :
     simp only [add_smul, Finset.sum_add_distrib, smul_sub, map_add, map_smul, Finset.smul_sum,
       mul_smul]
     abel
-  have h0 : ∀ y : T, N.mkQ (d y) = 0 := by
-    intro y
-    rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    exact hdN ⟨y, rfl⟩
+  have h0 : ∀ y : T, N.mkQ (d y) = 0 := fun y =>
+    (Submodule.Quotient.mk_eq_zero N).mpr (hdN ⟨y, rfl⟩)
   refine ⟨⟨s.image N.mkQ, ?_⟩⟩
   rw [eq_top_iff]
   rintro q -

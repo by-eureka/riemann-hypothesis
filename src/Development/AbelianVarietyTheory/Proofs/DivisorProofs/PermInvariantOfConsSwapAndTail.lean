@@ -8,23 +8,15 @@ theorem GlobalTheory.perm_invariant_of_cons_swap :
   let S : Subgroup (Equiv.Perm (Fin (n+2))) :=
     { carrier := {σ | ∀ L : Fin (n+2) → α, F (fun i => L (σ i)) = F L}
       mul_mem' := by
-        intro σ τ hσ hτ
-        have hσ' : ∀ L : Fin (n+2) → α, F (fun i => L (σ i)) = F L := hσ
-        have hτ' : ∀ L : Fin (n+2) → α, F (fun i => L (τ i)) = F L := hτ
-        show ∀ L : Fin (n+2) → α, F (fun i => L ((σ * τ) i)) = F L
-        intro L
+        intro σ τ hσ hτ L
         calc F (fun i => L ((σ * τ) i)) = F (fun i => L (σ (τ i))) := rfl
-          _ = F (fun j => L (σ j)) := hτ' (fun j => L (σ j))
-          _ = F L := hσ' L
+          _ = F (fun j => L (σ j)) := hτ (fun j => L (σ j))
+          _ = F L := hσ L
       one_mem' := by
-        show ∀ L : Fin (n+2) → α, F (fun i => L ((1 : Equiv.Perm (Fin (n+2))) i)) = F L
         intro L; rfl
       inv_mem' := by
-        intro σ hσ
-        have hσ' : ∀ L : Fin (n+2) → α, F (fun i => L (σ i)) = F L := hσ
-        show ∀ L : Fin (n+2) → α, F (fun i => L (σ⁻¹ i)) = F L
-        intro L
-        calc F (fun i => L (σ⁻¹ i)) = F (fun i => L (σ⁻¹ (σ i))) := (hσ' (fun j => L (σ⁻¹ j))).symm
+        intro σ hσ L
+        calc F (fun i => L (σ⁻¹ i)) = F (fun i => L (σ⁻¹ (σ i))) := (hσ (fun j => L (σ⁻¹ j))).symm
           _ = F L := by simp }
   have memS : ∀ σ, σ ∈ S ↔ ∀ L : Fin (n+2) → α, F (fun i => L (σ i)) = F L := fun σ => Iff.rfl
   have hfix : ∀ e : Equiv.Perm (Fin (n+1)), Equiv.Perm.decomposeFin.symm ((0 : Fin (n+2)), e) ∈ S := by
@@ -65,12 +57,9 @@ theorem GlobalTheory.perm_invariant_of_cons_swap :
     intro p
     refine Fin.cases ?_ (fun k => ?_) p
     · rw [Equiv.swap_self]; exact S.one_mem
-    · have h0 : Equiv.Perm.decomposeFin.symm ((0 : Fin (n+2)), Equiv.swap (0 : Fin (n+1)) k) 0 = 0 := by simp
-      have h1' : Equiv.Perm.decomposeFin.symm ((0 : Fin (n+2)), Equiv.swap (0 : Fin (n+1)) k) 1 = k.succ := by
-        rw [← Fin.succ_zero_eq_one, Equiv.Perm.decomposeFin_symm_apply_succ]
-        simp
-      have hc := Equiv.swap_apply_apply (Equiv.Perm.decomposeFin.symm ((0 : Fin (n+2)), Equiv.swap (0 : Fin (n+1)) k)) 0 1
-      rw [h0, h1'] at hc
+    · have hc := Equiv.swap_apply_apply (Equiv.Perm.decomposeFin.symm ((0 : Fin (n+2)), Equiv.swap (0 : Fin (n+1)) k)) 0 1
+      rw [Equiv.Perm.decomposeFin_symm_apply_zero, Equiv.Perm.decomposeFin_symm_apply_one,
+        Equiv.swap_self, Equiv.refl_apply, Equiv.swap_apply_left] at hc
       rw [hc]
       exact S.mul_mem (S.mul_mem (hfix _) hswap) (S.inv_mem (hfix _))
   have hdec : ∀ (p : Fin (n+2)) (e : Equiv.Perm (Fin (n+1))),

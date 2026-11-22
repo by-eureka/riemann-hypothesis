@@ -21,22 +21,17 @@ theorem UpperTheory.Reformulated.B.Qh30.artin :
       have h1 := h (q * p)
       have h2 := h p
       rw [Finset.sum_insert hψ] at h1 h2
-      have h3 : ∑ χ ∈ T, c χ * (χ q - ψ q) * χ p
-          = ∑ χ ∈ T, c χ * χ (q * p) - ψ q * ∑ χ ∈ T, c χ * χ p := by
-        rw [Finset.mul_sum, ← Finset.sum_sub_distrib]
-        refine Finset.sum_congr rfl fun χ hχ => ?_
-        rw [(hT' χ hχ).2]
-        ring
       rw [hψm.2] at h1
-      rw [h3]
+      have hsplit : ∀ χ ∈ T, c χ * (χ q - ψ q) * χ p = c χ * χ (q * p) - ψ q * (c χ * χ p) :=
+        fun χ hχ => by rw [(hT' χ hχ).2]; ring
+      rw [Finset.sum_congr rfl hsplit, Finset.sum_sub_distrib, ← Finset.mul_sum]
       linear_combination h1 - ψ q * h2
     have hc : ∀ χ ∈ T, c χ = 0 := by
       intro χ hχ
       by_contra hne
-      have : χ = ψ := by
-        funext q
-        exact sub_eq_zero.mp ((mul_eq_zero.mp (key q χ hχ)).resolve_left hne)
-      exact hψ (this ▸ hχ)
+      have hχψ : χ = ψ :=
+        funext fun q => sub_eq_zero.mp ((mul_eq_zero.mp (key q χ hχ)).resolve_left hne)
+      exact hψ (hχψ ▸ hχ)
     have hcψ : c ψ = 0 := by
       by_contra hne
       apply hψm.1

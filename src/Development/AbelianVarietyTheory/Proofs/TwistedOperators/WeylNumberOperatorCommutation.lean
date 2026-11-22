@@ -17,28 +17,20 @@ theorem weyl_number_operator_commutation
     (∀ z, N * a z = a z * (N - ((8 * Real.pi : ℝ) : ℂ) • 1)) ∧
     ∀ z, D z ∈ Submodule.span ℂ (Set.range (fun j => a (e j)) ∪ Set.range fun j => c (e j)) := by
   have I3 : Complex.I ^ 3 = -Complex.I := by rw [pow_succ, Complex.I_sq]; ring
-  have hJl : ∀ u v, inner ℝ (J u) v = -inner ℝ u (J v) := by
-    intro u v
+  have hJl : ∀ u v, inner ℝ (J u) v = -inner ℝ u (J v) := fun u v => by
     have h := J.inner_map_map (J u) v
     rw [hJJ, inner_neg_left] at h
     linarith
-  have hJself : ∀ z, inner ℝ z (J z) = 0 := by
-    intro z
-    have h := hJl z z
-    have h' := real_inner_comm z (J z)
-    linarith
-  have hDneg : ∀ w, D (-w) = -D w := by
-    intro w
-    have h := hsmul (-1) w
-    simpa using h
+  have hJself : ∀ z, inner ℝ z (J z) = 0 := fun z => by
+    linarith [hJl z z, real_inner_comm z (J z)]
+  have hDneg : ∀ w, D (-w) = -D w := fun w => by simpa using hsmul (-1) w
   have key : ∀ F : V → A, (∀ u v, F (u + v) = F u + F v) →
       (∀ (r : ℝ) v, F (r • v) = (r : ℂ) • F v) →
       ∀ w, F w = ∑ j, ((inner ℝ (e j) w : ℝ) : ℂ) • F (e j) := by
     intro F hFa hFs w
     have h := map_sum (AddMonoidHom.mk' F hFa) (fun j => inner ℝ (e j) w • e j) Finset.univ
     simp only [AddMonoidHom.mk'_apply, e.sum_repr'] at h
-    rw [h]
-    exact Finset.sum_congr rfl fun j _ => hFs _ _
+    simpa only [h] using Finset.sum_congr rfl fun j _ => hFs _ _
   have hca : ∀ u v, c (u + v) = c u + c v := by
     intro u v; rw [hc, hc, hc, map_add, hadd, hadd, smul_add]; abel
   have hcs : ∀ (r : ℝ) v, c (r • v) = (r : ℂ) • c v := by
@@ -61,29 +53,32 @@ theorem weyl_number_operator_commutation
   have hsw : ∀ u v, D u * D v = D v * D u +
       (2 * Real.pi * Complex.I * (inner ℝ u (J v) : ℝ) : ℂ) • 1 := by
     intro u v; rw [← hcomm u v]; abel
+  have hgen : ∀ (p q : ℂ) z w, (D z + p • D (J z)) * (D w + q • D (J w)) -
+      (D w + q • D (J w)) * (D z + p • D (J z)) = (2 * Real.pi * Complex.I *
+      ((1 + p * q) * ((inner ℝ z (J w) : ℝ) : ℂ) + (p - q) * ((inner ℝ z w : ℝ) : ℂ))) • 1 := by
+    intro p q z w
+    simp only [mul_add, add_mul, smul_mul_assoc, mul_smul_comm]
+    rw [hsw z w, hsw z (J w), hsw (J z) w, hsw (J z) (J w)]
+    simp only [hJJ, map_neg, inner_neg_right, hJl, neg_neg]
+    match_scalars <;> ring
+  have hc' : ∀ z, c z = D z + (-Complex.I) • D (J z) := fun z => by
+    rw [hc z, sub_eq_add_neg, neg_smul]
   have hac : ∀ z w, a z * c w - c w * a z =
       (4 * (Real.pi : ℂ) * ((inner ℝ z w : ℝ) : ℂ)
         - 4 * Real.pi * Complex.I * ((inner ℝ z (J w) : ℝ) : ℂ)) • (1 : A) := by
     intro z w
-    rw [ha, hc]
-    simp only [mul_sub, sub_mul, mul_add, add_mul, neg_mul, mul_neg, smul_mul_assoc, mul_smul_comm]
-    rw [hsw z w, hsw z (J w), hsw (J z) w, hsw (J z) (J w)]
-    simp only [hJJ, map_neg, inner_neg_right, inner_neg_left, hJl, neg_neg]
-    match_scalars <;> (ring_nf; try simp only [Complex.I_sq, I3]; try ring_nf)
-  have hcc : ∀ z w, c z * c w = c w * c z := by
-    intro z w
-    rw [← sub_eq_zero, hc, hc]
-    simp only [mul_sub, sub_mul, mul_add, add_mul, neg_mul, mul_neg, smul_mul_assoc, mul_smul_comm]
-    rw [hsw z w, hsw z (J w), hsw (J z) w, hsw (J z) (J w)]
-    simp only [hJJ, map_neg, inner_neg_right, inner_neg_left, hJl, neg_neg]
-    match_scalars <;> (ring_nf; try simp only [Complex.I_sq, I3]; try ring_nf)
-  have haa : ∀ z w, a z * a w = a w * a z := by
-    intro z w
-    rw [← sub_eq_zero, ha, ha]
-    simp only [mul_sub, sub_mul, mul_add, add_mul, neg_mul, mul_neg, smul_mul_assoc, mul_smul_comm]
-    rw [hsw z w, hsw z (J w), hsw (J z) w, hsw (J z) (J w)]
-    simp only [hJJ, map_neg, inner_neg_right, inner_neg_left, hJl, neg_neg]
-    match_scalars <;> (ring_nf; try simp only [Complex.I_sq, I3]; try ring_nf)
+    rw [ha, hc', neg_mul, mul_neg, sub_neg_eq_add, neg_add_eq_sub, ← neg_sub,
+      hgen Complex.I (-Complex.I), ← neg_smul]
+    congr 1
+    ring_nf
+    simp only [Complex.I_sq, I3]
+    ring
+  have hcc : ∀ z w, c z * c w = c w * c z := fun z w => by
+    rw [← sub_eq_zero, hc', hc', hgen (-Complex.I) (-Complex.I)]
+    simp [neg_mul_neg, Complex.I_mul_I]
+  have haa : ∀ z w, a z * a w = a w * a z := fun z w => by
+    rw [← sub_eq_zero, ha, ha, neg_mul_neg, neg_mul_neg, hgen Complex.I Complex.I]
+    simp [Complex.I_mul_I, Complex.I_sq]
   have hcsum := key c hca hcs
   have hasum := key a haa' has
   refine ⟨?_, ?_, ?_, ?_⟩

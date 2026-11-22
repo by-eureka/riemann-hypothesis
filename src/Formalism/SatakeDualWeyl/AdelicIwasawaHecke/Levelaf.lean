@@ -340,25 +340,19 @@ theorem levelaf_conj_integral (O : Subring L) (g : GL n L) (c : O)
     simpa only [RingHom.mapMatrix_apply, Matrix.map_apply] using congrFun (congrFun hm a) b
   choose e he using fun a b => Ideal.mem_span_singleton'.1 (hent a b)
   let E : Matrix n n O := Matrix.of e
-  have hL : ∀ a b, (((h : Matrix n n O) a b : O) : L) =
-      (1 : Matrix n n L) a b + (c : L) * (c : L) * ((e a b : O) : L) := by
-    intro a b
-    have h1 := he a b
-    rw [Matrix.one_apply] at h1 ⊢
-    split_ifs at h1 ⊢ with hab
-    · have := congrArg Subtype.val h1
-      push_cast at this
-      linear_combination -this
-    · have := congrArg Subtype.val h1
-      push_cast at this
-      linear_combination -this
   have hkey : ((bc (n := n) O.subtype h : GL n L) : Matrix n n L) =
       1 + ((c : L) * (c : L)) • RingHom.mapMatrix (m := n) O.subtype E := by
     ext a b
     simp only [bc, Units.coe_map, MonoidHom.coe_coe, RingHom.toMonoidHom_eq_coe,
       RingHom.mapMatrix_apply, Matrix.map_apply, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul,
       E, Matrix.of_apply, Subring.coe_subtype]
-    exact hL a b
+    have h1 := he a b
+    rw [Matrix.one_apply] at h1 ⊢
+    split_ifs at h1 ⊢ with hab
+    all_goals
+      have := congrArg Subtype.val h1
+      push_cast at this
+      linear_combination -this
   have hcalc : ((g⁻¹ * bc (n := n) O.subtype h * g : GL n L) : Matrix n n L) =
       1 + ((c : L) • ((g⁻¹ : GL n L) : Matrix n n L)) * RingHom.mapMatrix (m := n) O.subtype E *
         ((c : L) • (g : Matrix n n L)) := by
@@ -392,23 +386,16 @@ theorem levelaf_princ_le_map_conj (O : Subring L) (g : GL n L) (c : O)
 theorem levelaf_princ_relIndex_ne_zero (O : Subring L) (I : Ideal O) [Finite (O ⧸ I)] :
     (princ (n := n) O.subtype I).relIndex (bc (n := n) O.subtype).range ≠ 0 := by
   classical
-  have : Finite (Matrix n n (O ⧸ I)) := inferInstanceAs (Finite (n → n → O ⧸ I))
   have hN : (redGL (n := n) I).ker.index ≠ 0 := by
     rw [Subgroup.index_ker]
     exact Nat.card_pos.ne'
-  have hsup : ((redGL (n := n) I).ker ⊔ (bc (n := n) O.subtype).ker).index ≠ 0 := by
-    intro h
-    apply hN
-    have hd := Subgroup.index_dvd_of_le
-      (le_sup_left : (redGL (n := n) I).ker ≤ (redGL (n := n) I).ker ⊔ (bc (n := n) O.subtype).ker)
-    rw [h] at hd
-    exact Nat.eq_zero_of_zero_dvd hd
   have hprinc : princ (n := n) O.subtype I = ((redGL (n := n) I).ker).map (bc (n := n) O.subtype) := by
     unfold princ congPre
     rw [MonoidHom.comap_bot]
   rw [hprinc, MonoidHom.range_eq_map, Subgroup.relIndex_map_map, top_sup_eq,
     Subgroup.relIndex_top_right]
-  exact hsup
+  intro h
+  exact hN (Nat.eq_zero_of_zero_dvd (h ▸ Subgroup.index_dvd_of_le le_sup_left))
 
 end Generic
 

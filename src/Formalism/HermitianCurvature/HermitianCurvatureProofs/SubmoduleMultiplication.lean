@@ -1,3 +1,4 @@
+import Formalism.HermitianCurvature.HermitianCurvatureProofs.AdicNeighbourhood
 import Formalism.HermitianCurvature.ThetaExistenceInductiveFromPieces
 
 open Formalism.FourierDecayAlt.A6 Formalism.FourierDecayAlt.A5 Filter Topology Matrix
@@ -44,39 +45,8 @@ theorem I_nhds {R : Subring K} (ho : IsOpen (R : Set K)) (a : Kˣ) : I R (a : K)
 
 theorem inter_zero {R : Subring K} [T2Space K] [IsReduced K] (hc : IsCompact (R : Set K))
     (hn : ∀ n : ℕ, n ≠ 0 → IsUnit (n : K)) (ϖ : K) (hu : ∀ x : K, ∃ m : ℕ, ϖ ^ m * x ∈ R)
-    (x : K) (hx : ∀ n, x ∈ I R (ϖ ^ n)) : x = 0 := by
-  by_contra hx0
-  have hx2 : x ^ 2 ≠ 0 := fun h => hx0 (IsNilpotent.eq_zero ⟨2, h⟩)
-  have hI : ∀ y : K, y * x ∈ R := by
-    intro y
-    obtain ⟨m, hm⟩ := hu y
-    obtain ⟨r, hr, e⟩ := hx m
-    have : y * x = ϖ ^ m * y * r := by rw [e]; ring
-    rw [this]; exact R.mul_mem hm hr
-  have hW : ({x ^ 2}ᶜ : Set K) ∈ 𝓝 (0 : K) := isOpen_compl_singleton.mem_nhds (by
-    simpa using hx2.symm)
-  obtain ⟨U, hU, hUR⟩ := small_mul hc hW
-  obtain ⟨U', hU', hsub⟩ := exists_nhds_half_neg hU
-  obtain ⟨a, -, ha⟩ := hc.exists_mapClusterPt (f := (atTop : Filter ℕ)) (u := fun n : ℕ => (n : K) * x)
-    (le_principal_iff.2 (mem_map.2 (Filter.univ_mem' fun n : ℕ => hI (n : K))))
-  have hN : {y | y - a ∈ U'} ∈ 𝓝 a := by
-    have : ContinuousAt (fun y : K => y - a) a := (continuous_id.sub continuous_const).continuousAt
-    exact this.preimage_mem_nhds (by simpa using hU')
-  have hf := frequently_atTop.1 (ha.frequently hN)
-  obtain ⟨n, -, h1⟩ := hf 0
-  obtain ⟨m, hm, h2⟩ := hf (n + 1)
-  have h3 := hsub _ h2 _ h1
-  obtain ⟨d, rfl⟩ : ∃ d, m = n + 1 + d := ⟨m - (n + 1), by omega⟩
-  have e : ((n + 1 + d : ℕ) : K) * x - a - ((n : K) * x - a) = ((d + 1 : ℕ) : K) * x := by
-    push_cast; ring
-  rw [e] at h3
-  obtain ⟨v, hv⟩ := hn (d + 1) (by omega)
-  have h4 := hUR _ h3 _ (hI ((v⁻¹ : Kˣ) : K))
-  apply h4
-  show ((d + 1 : ℕ) : K) * x * (((v⁻¹ : Kˣ) : K) * x) = x ^ 2
-  rw [← hv]
-  have : (v : K) * ((v⁻¹ : Kˣ) : K) = 1 := by simp
-  linear_combination x ^ 2 * this
+    (x : K) (hx : ∀ n, x ∈ I R (ϖ ^ n)) : x = 0 :=
+  Formalism.FourierDecayAlt.P.AdicNeighbourhood.inter_zero hc hn ϖ hu x hx
 
 structure Adic (R : Subring K) (ϖ : Kˣ) : Prop where
   t2 : T2Space K
@@ -88,29 +58,8 @@ structure Adic (R : Subring K) (ϖ : Kˣ) : Prop where
 
 theorem adic_of_datum {R : Subring K} {ψ : AddChar K ℂ} (hD : LocalDatum K R ψ)
     (hn : ∀ n : ℕ, n ≠ 0 → IsUnit (n : K)) : ∃ ϖ : Kˣ, Adic R ϖ := by
-  obtain ⟨ϖ, hϖ, hu⟩ := hD.unif
-  have := hD.t2
-  have := hD.red
-  refine ⟨ϖ, hD.t2, hD.isOpen, hD.isCompact, hϖ, hu, fun W hW => ?_⟩
-  obtain ⟨W', hW'W, hW'o, h0⟩ := mem_nhds_iff.1 hW
-  have hs : IsCompact ((R : Set K) ∩ W'ᶜ) := hD.isCompact.inter_right hW'o.isClosed_compl
-  have hanti : Antitone fun n : ℕ => I R ((ϖ : K) ^ n) := by
-    intro n m hnm x hx
-    obtain ⟨r, hr, rfl⟩ := hx
-    obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hnm
-    exact ⟨(ϖ : K) ^ d * r, R.mul_mem (R.pow_mem hϖ d) hr, by ring⟩
-  obtain ⟨n, hn'⟩ := hs.elim_directed_family_closed (fun n : ℕ => I R ((ϖ : K) ^ n))
-    (fun n => (I_compact hD.isCompact _).isClosed) (by
-      rw [Set.eq_empty_iff_forall_notMem]
-      rintro x ⟨⟨-, hxW⟩, hx⟩
-      have := inter_zero hD.isCompact hn (ϖ : K) hu x (fun n => Set.mem_iInter.1 hx n)
-      exact hxW (this ▸ h0)) hanti.directed_ge
-  refine ⟨n, fun r hr => hW'W ?_⟩
-  by_contra hc
-  have : (ϖ : K) ^ n * r ∈ ((R : Set K) ∩ W'ᶜ) ∩ I R ((ϖ : K) ^ n) :=
-    ⟨⟨R.mul_mem (R.pow_mem hϖ n) hr, hc⟩, r, hr, rfl⟩
-  rw [hn'] at this
-  exact this
+  obtain ⟨ϖ, h⟩ := Formalism.FourierDecayAlt.P.AdicNeighbourhood.adic_of_datum hD hn
+  exact ⟨ϖ, h.t2, h.isOpen, h.isCompact, h.mem, h.absorb, h.basis⟩
 
 variable {R : Subring K} {ϖ : Kˣ}
 

@@ -9,26 +9,18 @@ theorem UpperTheory.V.AlgebraTools.relWeight :
   classical
   obtain ⟨P, hP⟩ : ∃ P : (ι → ℤ) → A, ∀ m, P m = ∏ i, a i ^ m i := ⟨_, fun _ => rfl⟩
   have hPadd : ∀ m n, P (m + n) = P m * P n := by
-    intro m n
-    rw [hP, hP, hP, ← Finset.prod_mul_distrib]
-    refine Finset.prod_congr rfl fun i _ => ?_
-    rw [Pi.add_apply, _root_.zpow_add]
+    simp [hP, Finset.prod_mul_distrib, Pi.add_apply, _root_.zpow_add]
   have hPsmul : ∀ (c : ℤ) m, P (c • m) = P m ^ c := by
     intro c m
-    rw [hP, hP, ← Finset.prod_zpow]
-    refine Finset.prod_congr rfl fun i _ => ?_
-    rw [Pi.smul_apply, smul_eq_mul, mul_comm, _root_.zpow_mul]
+    simp only [hP, Pi.smul_apply, smul_eq_mul]
+    rw [← Finset.prod_zpow]
+    exact Finset.prod_congr rfl fun i _ => by rw [mul_comm, _root_.zpow_mul]
   have hPsub : ∀ m n, P (m - n) = P m / P n := by
     intro m n
     rw [eq_div_iff_mul_eq', ← hPadd, sub_add_cancel]
   have hPe : ∀ i, P (Pi.single i 1) = a i := by
     intro i
-    rw [hP]
-    rw [Finset.prod_eq_single i]
-    · simp
-    · intro j _ hj
-      simp [Pi.single_eq_of_ne hj]
-    · simp
+    simp [hP, Pi.single_apply]
   let L : Submodule ℤ (ι → ℤ) :=
     { carrier := {m | ∃ k : ℤ, k ≠ 0 ∧ P (k • m) = 1}
       add_mem' := by
@@ -46,21 +38,17 @@ theorem UpperTheory.V.AlgebraTools.relWeight :
       obtain ⟨m, rfl⟩ := Submodule.Quotient.mk_surjective L x
       rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hx
       obtain ⟨k, hk, h⟩ := hx
-      by_cases hr : r = 0
+      rcases eq_or_ne r 0 with hr | hr
       · exact Or.inl hr
-      · right
-        rw [Submodule.Quotient.mk_eq_zero]
-        exact ⟨k * r, mul_ne_zero hk hr, by rw [mul_smul]; exact h⟩
+      · rw [Submodule.Quotient.mk_eq_zero]
+        exact Or.inr ⟨k * r, mul_ne_zero hk hr, by rw [mul_smul]; exact h⟩
   let q : ι → (ι → ℤ) ⧸ L := fun i => L.mkQ (Pi.single i 1)
   have hq : ∀ i j, i ≠ j → q i - q j ≠ 0 := by
     intro i j hij h
     rw [← map_sub, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at h
     obtain ⟨k, hk, hk1⟩ := h
-    apply ha i j hij
-    rw [isOfFinOrder_iff_zpow_eq_one]
-    refine ⟨k, hk, ?_⟩
-    rw [hPsmul, hPsub, hPe, hPe] at hk1
-    exact hk1
+    refine ha i j hij (isOfFinOrder_iff_zpow_eq_one.mpr ⟨k, hk, ?_⟩)
+    simpa only [hPsmul, hPsub, hPe] using hk1
   have hex : ∃ f : Module.Dual ℤ ((ι → ℤ) ⧸ L), ∀ i j, i ≠ j → f (q i) ≠ f (q j) := by
     by_contra hno
     push_neg at hno
@@ -68,34 +56,26 @@ theorem UpperTheory.V.AlgebraTools.relWeight :
     let p : ι × ι → Submodule ℤ (Module.Dual ℤ ((ι → ℤ) ⧸ L)) :=
       fun x => LinearMap.ker (Module.Dual.eval ℤ _ (q x.1 - q x.2))
     have hc : ⋃ x ∈ s, (p x : Set (Module.Dual ℤ ((ι → ℤ) ⧸ L))) = Set.univ := by
-      apply Set.eq_univ_of_forall
-      intro f
+      refine Set.eq_univ_of_forall fun f => ?_
       obtain ⟨i, j, hij, h⟩ := hno f
-      simp only [Set.mem_iUnion]
-      refine ⟨(i, j), by simp [s, hij], ?_⟩
-      simp [p, h]
+      exact Set.mem_iUnion₂.mpr ⟨(i, j), by simp [s, hij], by simp [p, h]⟩
     obtain ⟨⟨i, j⟩, hx, hfi⟩ := Submodule.exists_finiteIndex_of_cover hc
     have hij : i ≠ j := by simpa [s] using hx
     apply hq i j hij
     rw [← Module.forall_dual_apply_eq_zero_iff ℤ]
     intro f
-    have h1 := AddSubgroup.nsmul_index_mem (p (i, j)).toAddSubgroup f
-    have h2 : ((p (i, j)).toAddSubgroup.index • f) (q i - q j) = 0 := h1
+    have h2 : ((p (i, j)).toAddSubgroup.index • f) (q i - q j) = 0 :=
+      AddSubgroup.nsmul_index_mem (p (i, j)).toAddSubgroup f
     rw [LinearMap.smul_apply, smul_eq_zero] at h2
     exact h2.resolve_left hfi.index_ne_zero
   obtain ⟨f, hf⟩ := hex
-  refine ⟨fun i => f (q i), fun i j h => ?_, fun m hm => ?_⟩
-  · by_contra hij
-    exact hf i j hij h
-  · have hm0 : L.mkQ m = 0 := by
-      rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-      exact ⟨1, one_ne_zero, by rw [one_smul, hP]; exact hm⟩
-    have hsum : m = ∑ i, m i • (Pi.single i 1 : ι → ℤ) := by
-      ext l
-      simp [Finset.sum_apply, Pi.single_apply]
-    have h3 : ∑ i, m i • q i = 0 := by
-      rw [← hm0]
-      conv_rhs => rw [hsum]
-      simp only [q, map_sum, LinearMap.map_smul]
-    calc ∑ i, m i * f (q i) = f (∑ i, m i • q i) := by simp [map_sum]
-      _ = 0 := by rw [h3, map_zero]
+  refine ⟨fun i => f (q i), fun i j h => by_contra fun hij => hf i j hij h, fun m hm => ?_⟩
+  have hsum : ∑ i, m i • (Pi.single i 1 : ι → ℤ) = m := by
+    ext l
+    simp [Finset.sum_apply, Pi.single_apply]
+  have hq0 : ∑ i, m i • q i = 0 := by
+    have h : ∑ i, m i • q i = L.mkQ m := by simp only [q, ← map_smul, ← map_sum, hsum]
+    rw [h, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+    exact ⟨1, one_ne_zero, by simpa [hP] using hm⟩
+  calc ∑ i, m i * f (q i) = f (∑ i, m i • q i) := by simp [map_sum]
+    _ = 0 := by rw [hq0, map_zero]

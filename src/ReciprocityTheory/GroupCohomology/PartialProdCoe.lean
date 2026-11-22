@@ -1,3 +1,4 @@
+import ReciprocityTheory.GroupCohomology.CupCorA
 import ReciprocityTheory.GroupCohomology.CupConnRightStatement
 import ReciprocityTheory.GroupCohomology.HomogExistsStatement
 
@@ -160,34 +161,7 @@ theorem continuous_rho (s : G) : Continuous (M.rho s) :=
 
 theorem normF_mem (n : ℕ) (F : (Fin (n + 1) → G) → M.V) (hF : F ∈ hcoch (M.resSub U) G n) :
     normF M U n F ∈ hcoch M G n := by
-  classical
-  haveI : Fintype (Quotient (QuotientGroup.rightRel U)) := Fintype.ofFinite _
-  refine ⟨?_, fun g x => ?_⟩
-  · have : normF M U n F = fun x => ∑ c : Quotient (QuotientGroup.rightRel U),
-        M.rho c.out⁻¹ (F fun i => c.out * x i) := funext (normF_eq M U n F)
-    rw [this]
-    refine continuous_finset_sum _ fun c _ => (continuous_rho M _).comp (hF.1.comp ?_)
-    exact continuous_pi fun i => continuous_const.mul (continuous_apply i)
-  · rw [normF_eq, normF_eq, map_sum]
-    have key : ∀ c : Quotient (QuotientGroup.rightRel U),
-        M.rho c.out⁻¹ (F fun i => c.out * (g • x i)) =
-        M.rho g (M.rho (cosetMul U g c).out⁻¹ (F fun i => (cosetMul U g c).out * x i)) := by
-      intro c
-      have e := out_mul U g c
-      have h1 : (fun i => c.out * (g • x i)) =
-          fun i => retr U (c.out * g) • ((cosetMul U g c).out * x i) := by
-        funext i
-        show c.out * (g * x i) = (retr U (c.out * g) : G) * ((cosetMul U g c).out * x i)
-        rw [← mul_assoc, ← mul_assoc, ← e]
-      rw [h1, hF.2]
-      show M.rho c.out⁻¹ (M.rho (retr U (c.out * g) : G) _) = _
-      rw [← Module.End.mul_apply, ← map_mul, ← Module.End.mul_apply, ← map_mul]
-      congr 2
-      rw [show (retr U (c.out * g) : G) = c.out * g * ((cosetMul U g c).out)⁻¹ by
-        rw [eq_mul_inv_iff_mul_eq]; exact e.symm]
-      group
-    simp only [key]
-    exact Fintype.sum_bijective _ (cosetMul_bij U g) _ _ fun _ => rfl
+  exact ReciprocityTheory.Coh.CCA.normF_mem M U n F hF
 
 theorem normF_hd (n : ℕ) (F : (Fin (n + 1) → G) → M.V) :
     normF M U (n + 1) (hd n F) = hd n (normF M U n F) := by
